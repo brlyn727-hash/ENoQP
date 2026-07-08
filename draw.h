@@ -116,23 +116,38 @@ static ImU32 GetBallColor(int ballIndex) {
 // ============================================
 // ألوان النيون المتطورة
 // ============================================
-#define NEON_CYAN      IM_COL32(0, 255, 255, 255)
-#define NEON_PURPLE    IM_COL32(180, 0, 255, 255)
-#define NEON_GOLD      IM_COL32(255, 215, 0, 255)
-#define NEON_PINK      IM_COL32(255, 0, 150, 255)
-#define NEON_BLUE      IM_COL32(0, 150, 255, 255)
-#define NEON_GREEN     IM_COL32(0, 255, 100, 255)
-#define NEON_ORANGE    IM_COL32(255, 165, 0, 255)
-#define NEON_RED       IM_COL32(255, 0, 0, 255)
-#define NEON_WHITE     IM_COL32(255, 255, 255, 255)
+#define UI_BG_WINDOW        IM_COL32(10, 10, 10, 255)
+#define UI_BG_PANEL         IM_COL32(20, 20, 20, 255)
+#define UI_BG_SIDEBAR       IM_COL32(15, 15, 15, 255)
+#define UI_BG_CONTENT       IM_COL32(18, 18, 18, 255)
+#define UI_ACCENT_RED       IM_COL32(200, 30, 30, 255)
+#define UI_ACCENT_RED_SOFT  IM_COL32(200, 30, 30, 180)
+#define UI_BORDER_INACTIVE  IM_COL32(50, 50, 50, 255)
+#define UI_TEXT_PRIMARY     IM_COL32(230, 230, 230, 255)
+#define UI_TEXT_SECONDARY   IM_COL32(130, 130, 130, 255)
+#define UI_TEXT_DIMMER      IM_COL32(105, 105, 105, 255)
+#define UI_TOGGLE_OFF       IM_COL32(60, 60, 60, 255)
+#define UI_BUTTON_INACTIVE  IM_COL32(35, 35, 35, 255)
+#define UI_TAB_UNSELECTED   IM_COL32(25, 25, 25, 255)
+#define UI_TRACK_EMPTY      IM_COL32(45, 45, 45, 255)
 
-#define COL_BG_DEEP      IM_COL32(11, 18, 32, 250)
-#define COL_BG_DARK      IM_COL32(16, 26, 44, 250)
-#define COL_PANEL        IM_COL32(22, 32, 52, 255)
-#define COL_PANEL_SOFT   IM_COL32(28, 40, 62, 255)
-#define COL_TEXT         IM_COL32(235, 238, 245, 255)
-#define COL_TEXT_DIM     IM_COL32(160, 168, 185, 255)
-#define COL_TEXT_FAINT   IM_COL32(120, 128, 145, 255)
+#define NEON_CYAN      UI_ACCENT_RED
+#define NEON_PURPLE    UI_ACCENT_RED
+#define NEON_GOLD      UI_ACCENT_RED
+#define NEON_PINK      UI_ACCENT_RED
+#define NEON_BLUE      UI_ACCENT_RED
+#define NEON_GREEN     UI_ACCENT_RED
+#define NEON_ORANGE    UI_ACCENT_RED
+#define NEON_RED       UI_ACCENT_RED
+#define NEON_WHITE     UI_TEXT_PRIMARY
+
+#define COL_BG_DEEP      UI_BG_WINDOW
+#define COL_BG_DARK      UI_BG_SIDEBAR
+#define COL_PANEL        UI_BG_PANEL
+#define COL_PANEL_SOFT   UI_BG_CONTENT
+#define COL_TEXT         UI_TEXT_PRIMARY
+#define COL_TEXT_DIM     UI_TEXT_SECONDARY
+#define COL_TEXT_FAINT   UI_TEXT_DIMMER
 
 // ============================================
 // دوال المساعدة
@@ -278,83 +293,47 @@ static const char* CurrentTabTitle() {
 // ============================================
 // زر جانبي محسن مع تأثيرات نيونية متطورة
 // ============================================
-static bool GoldSidebarButton(const char* label, const char* icon, bool selected, float width) {
+static bool FlatSidebarButton(const char* label, const char* icon, bool selected, float width) {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems) return false;
     ImGuiContext& g = *GImGui;
     const ImGuiID id = window->GetID(label);
 
     ImVec2 pos = window->DC.CursorPos;
-    ImVec2 size = ImVec2(width - 16.0f, 86.0f);
+    ImVec2 size = ImVec2(width - 16.0f, 52.0f);
     const ImRect bb(pos, pos + size);
     ItemSize(size, g.Style.FramePadding.y);
     if (!ItemAdd(bb, id)) return false;
 
-    bool hovered, held;
+    bool hovered = false, held = false;
     bool pressed = ButtonBehavior(bb, id, &hovered, &held);
 
     static std::map<ImGuiID, float> anim;
     float& t = anim[id];
-    float target = (selected ? 1.0f : (hovered ? 0.5f : 0.0f));
-    t += (target - t) * g.IO.DeltaTime * 12.0f;
+    float target = selected ? 1.0f : (hovered ? 0.35f : 0.0f);
+    t += (target - t) * g.IO.DeltaTime * 14.0f;
 
     ImDrawList* dl = window->DrawList;
-    static float time = 0.0f;
-    time += g.IO.DeltaTime;
+    ImU32 bg = selected ? IM_COL32(200, 30, 30, 220) : (hovered ? IM_COL32(32, 32, 32, 255) : UI_TAB_UNSELECTED);
+    ImU32 border = selected ? UI_ACCENT_RED : IM_COL32(40 + (int)(15.0f * t), 40 + (int)(15.0f * t), 40 + (int)(15.0f * t), 255);
+    ImU32 textCol = selected ? UI_TEXT_PRIMARY : (hovered ? IM_COL32(185, 185, 185, 255) : UI_TEXT_SECONDARY);
+    ImU32 iconCol = selected ? UI_TEXT_PRIMARY : (hovered ? IM_COL32(210, 210, 210, 255) : UI_TEXT_SECONDARY);
 
-    // 6 طبقات من التوهج الخارجي
-    for (int i = 6; i > 0; i--) {
-        float alpha = (7 - i) * 12.0f * (0.5f + 0.5f * sinf(time * 0.8f + i * 0.5f));
-        ImU32 glowCol = selected ? NEON_CYAN : (hovered ? NEON_PURPLE : IM_COL32(100, 0, 200, 80));
-        dl->AddRect(ImVec2(bb.Min.x - i * 2 - 2.0f * sinf(time + i), bb.Min.y - i * 2),
-                    ImVec2(bb.Max.x + i * 2 + 2.0f * sinf(time * 0.7f + i), bb.Max.y + i * 2),
-                    IM_COL32(glowCol >> 16 & 0xFF, glowCol >> 8 & 0xFF, glowCol & 0xFF, (int)alpha), 0, 1.5f);
-    }
-
+    dl->AddRectFilled(bb.Min, bb.Max, bg, 6.0f);
+    dl->AddRect(bb.Min, bb.Max, border, 6.0f, 0, 1.0f);
     if (selected) {
-        dl->AddRectFilledMultiColor(bb.Min, bb.Max,
-            IM_COL32(0, 40, 70, 255), IM_COL32(0, 30, 50, 255),
-            IM_COL32(0, 20, 40, 255), IM_COL32(0, 35, 60, 255));
-        dl->AddRect(bb.Min, bb.Max, NEON_CYAN, 12.0f, 0, 2.0f);
-        dl->AddRectFilled(bb.Min, bb.Max, IM_COL32(0, 200, 255, 20), 12.0f);
-        dl->AddRectFilled(ImVec2(bb.Max.x - 4, bb.Min.y + 10),
-                          ImVec2(bb.Max.x, bb.Max.y - 10), NEON_CYAN, 2.0f);
-        
-        // نقاط ضوئية متحركة على الزر المحدد
-        for (int i = 0; i < 4; i++) {
-            float px = bb.Min.x + 10 + i * ((bb.Max.x - bb.Min.x - 20) / 3.0f);
-            float py = bb.Max.y - 6 + 4.0f * sinf(time * 2.0f + i * 1.2f);
-            dl->AddCircleFilled(ImVec2(px, py), 2.0f + 1.0f * sinf(time * 3.0f + i), NEON_CYAN, 8);
-        }
-    } else if (t > 0.01f) {
-        dl->AddRectFilled(bb.Min, bb.Max, IM_COL32(20, 30, 60, (int)(80 * t)), 12.0f);
+        dl->AddRectFilled(ImVec2(bb.Min.x, bb.Min.y), ImVec2(bb.Min.x + 3.0f, bb.Max.y), UI_TEXT_PRIMARY, 6.0f, ImDrawFlags_RoundCornersLeft);
+    } else if (hovered) {
+        dl->AddRectFilled(ImVec2(bb.Min.x, bb.Min.y + 8.0f), ImVec2(bb.Min.x + 3.0f, bb.Max.y - 8.0f), UI_ACCENT_RED, 2.0f);
     }
-
-    ImU32 textCol = selected ? IM_COL32(0, 255, 255, 255) : IM_COL32(180, 200, 220, (int)(200 + 55 * t));
-    ImU32 iconCol = selected ? NEON_CYAN : IM_COL32(150, 180, 220, (int)(180 + 75 * t));
 
     int tabIdx = 0;
     if (icon && icon[0] >= '0' && icon[0] <= '9') tabIdx = icon[0] - '0';
-    ImVec2 iconCenter = ImVec2(bb.Min.x + 36.0f, bb.Min.y + size.y * 0.5f);
-
-    // خلفية الأيقونة مع توهج
-    dl->AddCircleFilled(iconCenter, 25.0f,
-        selected ? IM_COL32(0, 20, 40, 255) : IM_COL32(10, 15, 30, 255), 32);
-    dl->AddCircle(iconCenter, 25.0f,
-        selected ? NEON_CYAN : IM_COL32(60, 80, 120, 200), 32, 1.8f);
-    
-    // توهج إضافي للأيقونة عند التحديد
-    if (selected) {
-        dl->AddCircle(iconCenter, 30.0f + 4.0f * sinf(time * 2.0f), 
-                     IM_COL32(0, 255, 255, 60), 32, 1.5f);
-    }
-    
+    ImVec2 iconCenter = ImVec2(bb.Min.x + 24.0f, bb.Min.y + size.y * 0.5f);
     DrawTabIcon(dl, tabIdx, iconCenter, iconCol);
 
-    ImVec2 textSize = CalcTextSize(label);
-    ImVec2 textPos = ImVec2(bb.Min.x + 78.0f, bb.Min.y + (size.y - textSize.y) * 0.5f);
+    ImVec2 textPos = ImVec2(bb.Min.x + 50.0f, bb.Min.y + (size.y - CalcTextSize(label).y) * 0.5f);
     DrawBoldText(dl, textPos, textCol, label);
-
     return pressed;
 }
 
@@ -367,88 +346,41 @@ static bool GoldToggle(const char* label, const char* sub, bool* v) {
     ImGuiContext& g = *GImGui;
     const ImGuiID id = window->GetID(label);
 
-    float th = 30.0f, tw = 54.0f, r = th * 0.5f;
+    const float rowH = 56.0f;
+    const float trackW = 48.0f;
+    const float trackH = 24.0f;
+    const float trackR = trackH * 0.5f;
+
     ImVec2 pos = window->DC.CursorPos;
-    float rowH = 64.0f;
     ImVec2 size = ImVec2(GetContentRegionAvail().x, rowH);
     const ImRect bb(pos, pos + size);
     ItemSize(size);
     if (!ItemAdd(bb, id)) return false;
 
-    bool hovered, held;
+    bool hovered = false, held = false;
     bool pressed = ButtonBehavior(bb, id, &hovered, &held);
     if (pressed) *v = !*v;
 
     static std::map<ImGuiID, float> anim;
     float& t = anim[id];
-    float target = *v ? 1.0f : 0.0f;
-    t += (target - t) * g.IO.DeltaTime * 14.0f;
+    t += ((*v ? 1.0f : 0.0f) - t) * g.IO.DeltaTime * 14.0f;
 
     ImDrawList* dl = window->DrawList;
-    ImGuiIO& io = ImGui::GetIO();
-    static float time = 0.0f;
-    time += io.DeltaTime;
+    dl->AddRectFilled(bb.Min, bb.Max, hovered ? IM_COL32(24, 24, 24, 255) : UI_BG_CONTENT, 6.0f);
+    dl->AddLine(ImVec2(bb.Min.x, bb.Max.y), ImVec2(bb.Max.x, bb.Max.y), IM_COL32(40, 40, 40, 255), 1.0f);
 
-    // 5 طبقات من التوهج الخارجي
-    for (int i = 5; i > 0; i--) {
-        float alpha = (6 - i) * 14.0f * (0.5f + 0.5f * sinf(time * 0.6f + i * 0.7f));
-        ImU32 glowCol = *v ? NEON_GREEN : (hovered ? NEON_PURPLE : NEON_PURPLE);
-        dl->AddRect(ImVec2(bb.Min.x - i * 2, bb.Min.y - i * 2),
-                    ImVec2(bb.Max.x + i * 2, bb.Max.y + i * 2),
-                    IM_COL32(glowCol >> 16 & 0xFF, glowCol >> 8 & 0xFF, glowCol & 0xFF, (int)alpha), 0, 1.5f);
-    }
+    float titleY = (sub && *sub) ? (bb.Min.y + 8.0f) : (bb.Min.y + 18.0f);
+    dl->AddText(ImVec2(bb.Min.x + 12.0f, titleY), UI_TEXT_PRIMARY, label);
+    if (sub && *sub) dl->AddText(ImVec2(bb.Min.x + 12.0f, titleY + CalcTextSize(label).y + 3.0f), UI_TEXT_SECONDARY, sub);
 
-    ImU32 bgCol = hovered ? IM_COL32(0, 20, 50, 200) : IM_COL32(0, 10, 30, 180);
-    dl->AddRectFilled(bb.Min, bb.Max, bgCol, 12.0f);
-    dl->AddRect(bb.Min, bb.Max, *v ? NEON_GREEN : NEON_PURPLE, 12.0f, 0, 1.5f);
+    ImVec2 trackMin = ImVec2(bb.Max.x - trackW - 14.0f, bb.Min.y + (rowH - trackH) * 0.5f);
+    ImVec2 trackMax = ImVec2(trackMin.x + trackW, trackMin.y + trackH);
+    ImU32 trackCol = *v ? UI_ACCENT_RED : IM_COL32(55, 55, 55, 255);
+    dl->AddRectFilled(trackMin, trackMax, trackCol, trackR);
 
-    // خط مسح ضوئي متحرك
-    static float toggleScan = 0.0f;
-    toggleScan += io.DeltaTime * 1.5f;
-    float scanP = fmod(toggleScan, 1.0f);
-    ImU32 scanCol = *v ? NEON_GREEN : NEON_PURPLE;
-    dl->AddLine(ImVec2(bb.Min.x + scanP * bb.GetWidth(), bb.Min.y),
-                ImVec2(bb.Min.x + scanP * bb.GetWidth(), bb.Max.y),
-                IM_COL32(scanCol >> 16 & 0xFF, scanCol >> 8 & 0xFF, scanCol & 0xFF, 80), 1.5f);
-
-    // النص مع تأثير توهج
-    ImVec2 ts = CalcTextSize(label);
-    dl->AddText(ImVec2(bb.Min.x + 18, bb.Min.y + 12), COL_TEXT, label);
-    if (sub && *sub) dl->AddText(ImVec2(bb.Min.x + 18, bb.Min.y + 12 + ts.y + 4), COL_TEXT_FAINT, sub);
-
-    // زر التبديل المتطور
-    ImVec2 togPos = ImVec2(bb.Max.x - tw - 18.0f, bb.Min.y + (rowH - th) * 0.5f);
-    ImVec2 togEnd = ImVec2(togPos.x + tw, togPos.y + th);
-
-    ImU32 offCol = IM_COL32(20, 30, 60, 255);
-    ImU32 onCol = NEON_GREEN;
-    ImU32 curCol = *v ? onCol : offCol;
-    dl->AddRectFilled(togPos, togEnd, curCol, r);
-    
-    // إطار متوهج للزر
-    if (*v) {
-        dl->AddRect(togPos, togEnd, NEON_GREEN, r, 0, 1.5f);
-        // نقاط ضوئية حول الزر عند التفعيل
-        for (int i = 0; i < 3; i++) {
-            float px = togPos.x + 6 + i * ((tw - 12) / 2.0f);
-            float py = togPos.y - 4 + 3.0f * sinf(time * 2.0f + i * 1.5f);
-            dl->AddCircleFilled(ImVec2(px, py), 1.5f, NEON_GREEN, 8);
-        }
-    }
-
-    // الدائرة المتحركة
-    float kx = togPos.x + r + (tw - th) * t;
-    float ky = togPos.y + r;
-    float kr = r - 4.0f;
-    dl->AddCircleFilled(ImVec2(kx, ky + 1), kr + 2.0f, IM_COL32(0, 0, 0, 80));
-    dl->AddCircleFilled(ImVec2(kx, ky), kr, IM_COL32(255, 255, 255, 255));
-    dl->AddCircle(ImVec2(kx, ky), kr, NEON_CYAN, 16, 1.0f);
-    
-    // توهج الدائرة
-    if (*v) {
-        dl->AddCircle(ImVec2(kx, ky), kr + 4.0f + 2.0f * sinf(time * 2.0f), 
-                     IM_COL32(0, 255, 100, 60), 16, 1.0f);
-    }
+    float knobX = trackMin.x + trackR + (trackW - trackH) * t;
+    float knobY = trackMin.y + trackR;
+    dl->AddCircleFilled(ImVec2(knobX, knobY), trackR - 4.0f, IM_COL32(255, 255, 255, 255), 24);
 
     return pressed;
 }
@@ -463,78 +395,59 @@ static bool GoldSliderFloat(const char* label, const char* sub, float* v, float 
     const ImGuiID id = window->GetID(label);
 
     ImVec2 pos = window->DC.CursorPos;
-    float rowH = 78.0f;
+    const float rowH = 70.0f;
     ImVec2 size = ImVec2(GetContentRegionAvail().x, rowH);
     const ImRect bb(pos, pos + size);
     ItemSize(size);
     if (!ItemAdd(bb, id)) return false;
 
     ImDrawList* dl = window->DrawList;
-    ImGuiIO& io = ImGui::GetIO();
-    static float time = 0.0f;
-    time += io.DeltaTime;
+    dl->AddRectFilled(bb.Min, bb.Max, UI_BG_CONTENT, 6.0f);
+    dl->AddLine(ImVec2(bb.Min.x, bb.Max.y), ImVec2(bb.Max.x, bb.Max.y), IM_COL32(40, 40, 40, 255), 1.0f);
 
-    for (int i = 4; i > 0; i--) {
-        float alpha = (5 - i) * 12.0f * (0.5f + 0.5f * sinf(time * 0.5f + i * 0.7f));
-        dl->AddRect(ImVec2(bb.Min.x - i * 2, bb.Min.y - i * 2),
-                    ImVec2(bb.Max.x + i * 2, bb.Max.y + i * 2),
-                    IM_COL32(0, 200, 255, (int)alpha), 0, 1.0f);
-    }
+    dl->AddText(ImVec2(bb.Min.x + 12.0f, bb.Min.y + 8.0f), UI_TEXT_PRIMARY, label);
+    if (sub && *sub) dl->AddText(ImVec2(bb.Min.x + 12.0f, bb.Min.y + 28.0f), UI_TEXT_SECONDARY, sub);
 
-    dl->AddRectFilled(bb.Min, bb.Max, IM_COL32(0, 10, 30, 200), 12.0f);
-    dl->AddRect(bb.Min, bb.Max, NEON_CYAN, 12.0f, 0, 1.5f);
+    float valueNorm = (*v - vmin) / (vmax - vmin);
+    valueNorm = ImClamp(valueNorm, 0.0f, 1.0f);
 
-    static float sliderScan = 0.0f;
-    sliderScan += io.DeltaTime * 1.2f;
-    float scanP = fmod(sliderScan, 1.0f);
-    dl->AddLine(ImVec2(bb.Min.x + scanP * bb.GetWidth(), bb.Min.y),
-                ImVec2(bb.Min.x + scanP * bb.GetWidth(), bb.Max.y),
-                IM_COL32(0, 255, 255, 60), 1.0f);
+    float trackLeft = bb.Min.x + 12.0f;
+    float trackRight = bb.Max.x - 80.0f;
+    float trackY = bb.Max.y - 18.0f;
+    float trackH = 6.0f;
+    float trackW = trackRight - trackLeft;
+    ImRect grabBB(ImVec2(trackLeft, trackY - 10.0f), ImVec2(trackRight, trackY + 12.0f));
 
-    ImVec2 ts = CalcTextSize(label);
-    dl->AddText(ImVec2(bb.Min.x + 18, bb.Min.y + 10), COL_TEXT, label);
-    if (sub && *sub) dl->AddText(ImVec2(bb.Min.x + 18, bb.Min.y + 10 + ts.y + 4), COL_TEXT_FAINT, sub);
-
-    float trackW = bb.GetWidth() - 36.0f - 70.0f;
-    ImVec2 trackA = ImVec2(bb.Min.x + 18, bb.Max.y - 18);
-    ImVec2 trackB = ImVec2(trackA.x + trackW, trackA.y + 4);
-
-    float tnorm = (*v - vmin) / (vmax - vmin);
-    tnorm = ImClamp(tnorm, 0.0f, 1.0f);
-
-    ImRect grabBB(trackA, ImVec2(trackB.x, trackB.y + 16));
-    bool hovered = IsMouseHoveringRect(grabBB.Min, ImVec2(grabBB.Max.x, grabBB.Max.y + 8));
     bool changed = false;
-    if (hovered && g.IO.MouseDown[0]) SetActiveID(id, window);
+    if (IsMouseHoveringRect(grabBB.Min, grabBB.Max) && g.IO.MouseDown[0]) SetActiveID(id, window);
     if (g.ActiveId == id) {
         if (g.IO.MouseDown[0]) {
-            float nx = (g.IO.MousePos.x - trackA.x) / trackW;
+            float nx = (g.IO.MousePos.x - trackLeft) / trackW;
             nx = ImClamp(nx, 0.0f, 1.0f);
             float nv = vmin + nx * (vmax - vmin);
-            if (nv != *v) { *v = nv; changed = true; }
-        } else ClearActiveID();
+            if (nv != *v) {
+                *v = nv;
+                valueNorm = nx;
+                changed = true;
+            }
+        } else {
+            ClearActiveID();
+        }
     }
 
-    dl->AddRectFilled(trackA, trackB, IM_COL32(10, 20, 50, 255), 2.0f);
-    ImVec2 fillEnd = ImVec2(trackA.x + trackW * tnorm, trackB.y);
-    dl->AddRectFilledMultiColor(trackA, fillEnd,
-        IM_COL32(0, 100, 200, 255), NEON_CYAN,
-        NEON_CYAN, IM_COL32(0, 100, 200, 255));
+    dl->AddRectFilled(ImVec2(trackLeft, trackY), ImVec2(trackRight, trackY + trackH), UI_TRACK_EMPTY, 3.0f);
+    float fillX = trackLeft + trackW * valueNorm;
+    dl->AddRectFilledMultiColor(ImVec2(trackLeft, trackY), ImVec2(fillX, trackY + trackH),
+        IM_COL32(160, 24, 24, 255), UI_ACCENT_RED, UI_ACCENT_RED, IM_COL32(160, 24, 24, 255));
 
-    float kx = trackA.x + trackW * tnorm;
-    float ky = (trackA.y + trackB.y) * 0.5f;
-    
-    // المقبض المتوهج
-    dl->AddCircleFilled(ImVec2(kx, ky + 1), 12.0f, IM_COL32(0, 0, 0, 100));
-    dl->AddCircleFilled(ImVec2(kx, ky), 11.0f, NEON_CYAN);
-    dl->AddCircle(ImVec2(kx, ky), 14.0f, NEON_CYAN, 0, 1.5f);
-    dl->AddCircle(ImVec2(kx, ky), 16.0f + 3.0f * sinf(time * 2.0f), 
-                 IM_COL32(0, 255, 255, 40), 0, 1.0f);
+    float knobY = trackY + trackH * 0.5f;
+    dl->AddCircleFilled(ImVec2(fillX, knobY), 10.0f, IM_COL32(255, 255, 255, 255), 28);
+    dl->AddCircle(ImVec2(fillX, knobY), 10.0f, UI_ACCENT_RED, 28, 1.5f);
 
-    char buf[32]; snprintf(buf, sizeof(buf), fmt, *v);
+    char buf[32];
+    snprintf(buf, sizeof(buf), fmt, *v);
     ImVec2 vs = CalcTextSize(buf);
-    dl->AddText(ImVec2(bb.Max.x - 18 - vs.x, ky - vs.y * 0.5f), NEON_CYAN, buf);
-
+    dl->AddText(ImVec2(bb.Max.x - vs.x - 12.0f, bb.Min.y + 8.0f), UI_TEXT_PRIMARY, buf);
     return changed;
 }
 
@@ -553,45 +466,35 @@ static bool GoldSliderInt(const char* label, const char* sub, int* v, int vmin, 
 static bool GoldCombo(const char* label, const char* sub, int* val, const char* items_z) {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems) return false;
+    const ImGuiID id = window->GetID(label);
     ImVec2 pos = window->DC.CursorPos;
-    float rowH = 64.0f;
+    const float rowH = 58.0f;
     ImVec2 size = ImVec2(GetContentRegionAvail().x, rowH);
     const ImRect bb(pos, pos + size);
+    ItemSize(size);
+    if (!ItemAdd(bb, id)) return false;
 
     ImDrawList* dl = window->DrawList;
-    ImGuiIO& io = ImGui::GetIO();
-    static float time = 0.0f;
-    time += io.DeltaTime;
+    dl->AddRectFilled(bb.Min, bb.Max, UI_BG_CONTENT, 6.0f);
+    dl->AddLine(ImVec2(bb.Min.x, bb.Max.y), ImVec2(bb.Max.x, bb.Max.y), IM_COL32(40, 40, 40, 255), 1.0f);
 
-    for (int i = 4; i > 0; i--) {
-        float alpha = (5 - i) * 12.0f * (0.5f + 0.5f * sinf(time * 0.6f + i * 0.5f));
-        dl->AddRect(ImVec2(bb.Min.x - i * 2, bb.Min.y - i * 2),
-                    ImVec2(bb.Max.x + i * 2, bb.Max.y + i * 2),
-                    IM_COL32(150, 0, 255, (int)alpha), 0, 1.0f);
-    }
+    if (label && *label) dl->AddText(ImVec2(bb.Min.x + 12.0f, bb.Min.y + 10.0f), UI_TEXT_PRIMARY, label);
+    if (sub && *sub) dl->AddText(ImVec2(bb.Min.x + 12.0f, bb.Min.y + 30.0f), UI_TEXT_SECONDARY, sub);
 
-    dl->AddRectFilled(bb.Min, bb.Max, IM_COL32(10, 0, 30, 200), 12.0f);
-    dl->AddRect(bb.Min, bb.Max, NEON_PURPLE, 12.0f, 0, 1.5f);
-
-    ImVec2 ts = CalcTextSize(label);
-    dl->AddText(ImVec2(bb.Min.x + 18, bb.Min.y + 12), COL_TEXT, label);
-    if (sub && *sub) dl->AddText(ImVec2(bb.Min.x + 18, bb.Min.y + 12 + ts.y + 4), COL_TEXT_FAINT, sub);
-
-    SetCursorScreenPos(ImVec2(bb.Max.x - 180 - 18, bb.Min.y + (rowH - 30) * 0.5f));
-    PushStyleColor(ImGuiCol_FrameBg, IM_COL32(10, 0, 30, 255));
-    PushStyleColor(ImGuiCol_FrameBgHovered, IM_COL32(20, 0, 50, 255));
-    PushStyleColor(ImGuiCol_FrameBgActive, IM_COL32(30, 0, 60, 255));
-    PushStyleColor(ImGuiCol_Button, NEON_PURPLE);
-    PushStyleColor(ImGuiCol_Text, IM_COL32(200, 150, 255, 255));
-    PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
-    PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 6));
-    SetNextItemWidth(180);
+    SetCursorScreenPos(ImVec2(bb.Max.x - 192.0f, bb.Min.y + 11.0f));
+    PushStyleColor(ImGuiCol_FrameBg, ImVec4(20.0f / 255.0f, 20.0f / 255.0f, 20.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(26.0f / 255.0f, 26.0f / 255.0f, 26.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(26.0f / 255.0f, 26.0f / 255.0f, 26.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_Border, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 180.0f / 255.0f));
+    PushStyleColor(ImGuiCol_Text, ImVec4(230.0f / 255.0f, 230.0f / 255.0f, 230.0f / 255.0f, 1.0f));
+    PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+    PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 6.0f));
+    SetNextItemWidth(180.0f);
     bool changed = Combo((std::string("##cb_") + label).c_str(), val, items_z);
-    PopStyleVar(2);
+    PopStyleVar(3);
     PopStyleColor(5);
-
-    Dummy(ImVec2(0, 0));
-    SetCursorScreenPos(ImVec2(bb.Min.x, bb.Max.y + 4));
+    SetCursorScreenPos(ImVec2(bb.Min.x, bb.Max.y + 4.0f));
     return changed;
 }
 
@@ -624,7 +527,7 @@ INLINE void DrawAutoQueue() {
             ImVec2 wp = GetWindowPos();
             ImVec2 ws = GetWindowSize();
             DrawGradientRect(dl, wp, ImVec2(wp.x + ws.x, wp.y + 60), IM_COL32(0, 150, 200, 255), NEON_CYAN, true);
-            dl->AddRectFilled(wp, ImVec2(wp.x + ws.x, wp.y + 18), IM_COL32(0, 100, 150, 255), 18.0f, ImDrawFlags_RoundCornersTop);
+            dl->AddRectFilled(wp, ImVec2(wp.x + ws.x, wp.y + 18), IM_COL32(160, 24, 24, 255), 18.0f, ImDrawFlags_RoundCornersTop);
             const char* t = L("Auto Queue", "ﻲﺋﺎﻘﻠﺘﻟﺍ ﻝﻮﺧﺪﻟﺍ");
             ImVec2 tz = CalcTextSize(t);
             dl->AddText(ImVec2(wp.x + (ws.x - tz.x) * 0.5f, wp.y + 18), NEON_CYAN, t);
@@ -689,7 +592,6 @@ INLINE void DrawShotApprovalPrompt(ImGuiIO& io) {
     if (!persistent_bool[O("bAutoPlay")] || !persistent_bool[O("bAutoApproval")]) return;
 
     ShotApprovalState& A = g_shotApproval;
-
     auto now = std::chrono::steady_clock::now();
     long elapsedMs = (long)std::chrono::duration_cast<std::chrono::milliseconds>(now - A.shownAt).count();
     int remaining = 3 - (int)(elapsedMs / 1000);
@@ -698,10 +600,11 @@ INLINE void DrawShotApprovalPrompt(ImGuiIO& io) {
     const float w = 430.0f, h = 246.0f;
     SetNextWindowPos(ImVec2(Width / 2.0f, 70.0f), ImGuiCond_Always, ImVec2(0.5f, 0.0f));
     SetNextWindowSize(ImVec2(w, h), ImGuiCond_Always);
-    PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    PushStyleVar(ImGuiStyleVar_WindowRounding, 16.0f);
+    PushStyleColor(ImGuiCol_WindowBg, ImVec4(10.0f / 255.0f, 10.0f / 255.0f, 10.0f / 255.0f, 0.98f));
+    PushStyleColor(ImGuiCol_Border, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 180.0f / 255.0f));
+    PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
     PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
 
     ImGuiWindowFlags wf = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
@@ -712,63 +615,43 @@ INLINE void DrawShotApprovalPrompt(ImGuiIO& io) {
         ImVec2 ws = GetWindowSize();
         ImVec2 wmax = ImVec2(wp.x + ws.x, wp.y + ws.y);
 
-        dl->AddRectFilled(ImVec2(wp.x + 3, wp.y + 5), ImVec2(wmax.x + 3, wmax.y + 6), IM_COL32(0, 0, 0, 110), 16.0f);
-        dl->AddRectFilled(wp, wmax, COL_BG_DEEP, 16.0f);
-        dl->AddRectFilled(wp, wmax, IM_COL32(0, 200, 255, 14), 16.0f);
-        dl->AddRect(wp, wmax, NEON_CYAN, 16.0f, 0, 2.0f);
-        DrawOrnateFrame(dl, wp, wmax);
+        dl->AddRectFilled(wp, wmax, UI_BG_WINDOW, 8.0f);
+        dl->AddRectFilled(wp, ImVec2(wmax.x, wp.y + 46.0f), UI_BG_SIDEBAR, 8.0f, ImDrawFlags_RoundCornersTop);
+        dl->AddLine(ImVec2(wp.x, wp.y + 46.0f), ImVec2(wmax.x, wp.y + 46.0f), UI_ACCENT_RED, 1.0f);
 
-        ImVec2 ha = ImVec2(wp.x + 14, wp.y + 14);
-        ImVec2 hb = ImVec2(wmax.x - 14, wp.y + 64);
-        DrawGradientRect(dl, ha, hb, IM_COL32(0, 100, 150, 255), NEON_CYAN, true);
-        dl->AddRect(ha, hb, NEON_CYAN, 8.0f, 0, 1.2f);
         const char* title = L("Approve the shot?", "؟ﺏﺮﻀﻟﺍ ﺪﻳﺮﺗ ﻞﻫ");
         ImVec2 tz = CalcTextSize(title);
-        DrawBoldText(dl, ImVec2(wp.x + (ws.x - tz.x) * 0.5f, ha.y + (50 - tz.y) * 0.5f), NEON_CYAN, title);
+        DrawBoldText(dl, ImVec2(wp.x + (ws.x - tz.x) * 0.5f, wp.y + 14.0f), UI_TEXT_PRIMARY, title);
 
         char info[128];
-        snprintf(info, sizeof(info), "%s %d %s",
-                 L("Auto-accept in", "ﺪﻌﺑ ﺔﻴﺋﺎﻘﻠﺗ ﺔﻘﻓﺍﻮﻣ"),
-                 remaining,
-                 L("s", "ﺔﻴﻧﺎﺛ"));
+        snprintf(info, sizeof(info), "%s %d %s", L("Auto-accept in", "ﺪﻌﺑ ﺔﻴﺋﺎﻘﻠﺗ ﺔﻘﻓﺍﻮﻣ"), remaining, L("s", "ﺔﻴﻧﺎﺛ"));
         ImVec2 iz = CalcTextSize(info);
-        dl->AddText(ImVec2(wp.x + (ws.x - iz.x) * 0.5f, wp.y + 72), COL_TEXT_DIM, info);
+        dl->AddText(ImVec2(wp.x + (ws.x - iz.x) * 0.5f, wp.y + 58.0f), UI_TEXT_SECONDARY, info);
 
-        float acc = A.accuracy;
-        if (acc < 0.0f) acc = 0.0f;
-        if (acc > 100.0f) acc = 100.0f;
-
-        ImU32 accCol;
-        if (acc >= 85.0f) accCol = IM_COL32(0, 255, 150, 255);
-        else if (acc >= 60.0f) accCol = NEON_CYAN;
-        else accCol = IM_COL32(255, 50, 50, 255);
-
+        float acc = ImClamp(A.accuracy, 0.0f, 100.0f);
         char accTxt[96];
-        snprintf(accTxt, sizeof(accTxt), "%s %d%%",
-                 L("Accuracy", "ﺐﻳﻮﺼﺘﻟﺍ ﺔﻗﺩ"), (int)(acc + 0.5f));
+        snprintf(accTxt, sizeof(accTxt), "%s %d%%", L("Accuracy", "ﺐﻳﻮﺼﺘﻟﺍ ﺔﻗﺩ"), (int)(acc + 0.5f));
         ImVec2 accZ = CalcTextSize(accTxt);
-        DrawBoldText(dl, ImVec2(wp.x + (ws.x - accZ.x) * 0.5f, wp.y + 96), accCol, accTxt);
+        dl->AddText(ImVec2(wp.x + (ws.x - accZ.x) * 0.5f, wp.y + 90.0f), UI_TEXT_PRIMARY, accTxt);
 
-        float barPad = 26.0f;
-        ImVec2 ba = ImVec2(wp.x + barPad, wp.y + 122);
-        ImVec2 bb = ImVec2(wmax.x - barPad, wp.y + 140);
-        dl->AddRectFilled(ba, bb, IM_COL32(0, 10, 30, 255), 9.0f);
+        float barPad = 24.0f;
+        ImVec2 ba = ImVec2(wp.x + barPad, wp.y + 122.0f);
+        ImVec2 bb = ImVec2(wmax.x - barPad, wp.y + 138.0f);
+        dl->AddRectFilled(ba, bb, UI_TRACK_EMPTY, 8.0f);
         float fillW = (bb.x - ba.x) * (acc / 100.0f);
-        if (fillW > 1.0f)
-            dl->AddRectFilled(ba, ImVec2(ba.x + fillW, bb.y), accCol, 9.0f);
-        dl->AddRect(ba, bb, NEON_CYAN, 9.0f, 0, 1.3f);
+        if (fillW > 1.0f) dl->AddRectFilled(ba, ImVec2(ba.x + fillW, bb.y), UI_ACCENT_RED, 8.0f);
+        dl->AddRect(ba, bb, UI_ACCENT_RED_SOFT, 8.0f, 0, 1.0f);
 
         float pad = 16.0f, gap = 12.0f;
         float bw = (ws.x - pad * 2 - gap) * 0.5f;
-        float bh = 50.0f;
+        float bh = 44.0f;
         float by = ws.y - bh - 16.0f;
 
-        PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
-
+        PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
         SetCursorPos(ImVec2(pad, by));
-        PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.6f, 0.8f, 1.0f));
-        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.7f, 0.9f, 1.0f));
-        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.4f, 0.6f, 1.0f));
+        PushStyleColor(ImGuiCol_Button, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 1.0f));
+        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(215.0f / 255.0f, 45.0f / 255.0f, 45.0f / 255.0f, 1.0f));
+        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(160.0f / 255.0f, 24.0f / 255.0f, 24.0f / 255.0f, 1.0f));
         PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 1, 1));
         if (Button(L("Accept", "ﻝﻮﺒﻗ"), ImVec2(bw, bh))) {
             A.approved = true;
@@ -777,9 +660,9 @@ INLINE void DrawShotApprovalPrompt(ImGuiIO& io) {
         PopStyleColor(4);
 
         SetCursorPos(ImVec2(pad + bw + gap, by));
-        PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
-        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.15f, 0.15f, 1.0f));
-        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.05f, 0.05f, 1.0f));
+        PushStyleColor(ImGuiCol_Button, ImVec4(35.0f / 255.0f, 35.0f / 255.0f, 35.0f / 255.0f, 1.0f));
+        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f));
+        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(65.0f / 255.0f, 65.0f / 255.0f, 65.0f / 255.0f, 1.0f));
         PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 1, 1));
         if (Button(L("Reject", "ﺾﻓﺭ"), ImVec2(bw, bh))) {
             A.approved = false;
@@ -791,7 +674,7 @@ INLINE void DrawShotApprovalPrompt(ImGuiIO& io) {
     }
     End();
     PopStyleVar(3);
-    PopStyleColor();
+    PopStyleColor(2);
 }
 
 // ============================================
@@ -854,7 +737,7 @@ INLINE void DrawESP(ImDrawList* draw) {
             for (int i = 0; i < 6; i++) {
                 auto sp = WorldToScreen(pockets[i]);
                 draw->AddCircle(ImVec2(sp.x, sp.y), 40, NEON_CYAN, 0, 3.f);
-                draw->AddCircle(ImVec2(sp.x, sp.y), 50, IM_COL32(0, 200, 255, 60), 0, 1.5f);
+                draw->AddCircle(ImVec2(sp.x, sp.y), 50, IM_COL32(200, 30, 30, 60), 0, 1.5f);
             }
         }
 
@@ -1065,8 +948,8 @@ INLINE void DrawESP(ImDrawList* draw) {
             for (int i = 0; i < 6; i++) {
                 if (Prediction::pocketStatus[i]) {
                     auto sp = WorldToScreen(pockets[i]);
-                    draw->AddCircle(ImVec2(sp.x, sp.y), 40, IM_COL32(0, 255, 100, 255), 0, 5.f);
-                    draw->AddCircle(ImVec2(sp.x, sp.y), 55, IM_COL32(0, 255, 100, 60), 0, 2.0f);
+                    draw->AddCircle(ImVec2(sp.x, sp.y), 40, IM_COL32(200, 30, 30, 255), 0, 5.f);
+                    draw->AddCircle(ImVec2(sp.x, sp.y), 55, IM_COL32(200, 30, 30, 60), 0, 2.0f);
                 }
             }
         }
@@ -1167,42 +1050,13 @@ INLINE void DrawESP(ImDrawList* draw) {
 // ============================================
 static void DrawSidebar(float sidebarW, float winH, ImVec2 winPos) {
     ImDrawList* dl = GetWindowDrawList();
-    static float time = 0.0f;
-    time += ImGui::GetIO().DeltaTime;
+    ImVec2 a = ImVec2(winPos.x, winPos.y + 50.0f);
+    ImVec2 b = ImVec2(winPos.x + sidebarW, winPos.y + winH);
+    dl->AddRectFilled(a, b, UI_BG_SIDEBAR, 8.0f, ImDrawFlags_RoundCornersBottomLeft);
+    dl->AddLine(ImVec2(b.x, a.y), b, UI_BORDER_INACTIVE, 1.0f);
 
-    // 6 طبقات من التوهج الخارجي للشريط الجانبي
-    for (int i = 6; i > 0; i--) {
-        float alpha = (7 - i) * 18.0f * (0.5f + 0.5f * sinf(time * 0.6f + i * 0.8f));
-        ImVec2 a = ImVec2(winPos.x + 16 - i - 2.0f * sinf(time + i), winPos.y + 80 - i);
-        ImVec2 b = ImVec2(winPos.x + sidebarW + 16 + i + 2.0f * cosf(time * 0.7f + i), winPos.y + winH - 20 + i);
-        dl->AddRect(a, b, IM_COL32(0, 200, 255, (int)alpha), 14.0f, 0, 1.5f + i * 0.1f);
-    }
-
-    ImVec2 a = ImVec2(winPos.x + 16, winPos.y + 80);
-    ImVec2 b = ImVec2(winPos.x + sidebarW + 16, winPos.y + winH - 20);
-    
-    // خلفية متدرجة للشريط الجانبي
-    dl->AddRectFilledMultiColor(a, b,
-        IM_COL32(0, 10, 30, 255),
-        IM_COL32(0, 15, 40, 255),
-        IM_COL32(0, 20, 50, 255),
-        IM_COL32(0, 10, 35, 255));
-    
-    // إطار خارجي متوهج
-    dl->AddRect(a, b, NEON_CYAN, 14.0f, 0, 2.0f);
-    dl->AddRect(a + ImVec2(4, 4), b - ImVec2(4, 4), IM_COL32(0, 255, 255, 40), 10.0f, 0, 1.0f);
-    
-    // نقاط ضوئية على الشريط الجانبي
-    for (int i = 0; i < 5; i++) {
-        float x = a.x + 20 + i * ((b.x - a.x - 40) / 4.0f);
-        float y = a.y + 10 + 4.0f * sinf(time * 1.5f + i * 1.2f);
-        dl->AddCircleFilled(ImVec2(x, y), 2.0f + 1.0f * sinf(time * 2.0f + i), 
-                           IM_COL32(0, 200, 255, 100 + 80 * (0.5f + 0.5f * sinf(time * 1.8f + i))), 8);
-    }
-
-    SetCursorPos(ImVec2(22, 96));
+    SetCursorPos(ImVec2(8.0f, 64.0f));
     BeginGroup();
-
     struct Tab { const char* en; const char* ar; const char* icon; };
     Tab tabs[] = {
         { "Draw", "ﻢﺳﺭ", "0" },
@@ -1211,12 +1065,10 @@ static void DrawSidebar(float sidebarW, float winH, ImVec2 winPos) {
         { "Extra", "ﻲﻓﺎﺿﺇ", "3" },
         { "Info", "ﺕﺎﻣﻮﻠﻌﻣ", "4" },
     };
-    int n = (int)(sizeof(tabs) / sizeof(tabs[0]));
-    for (int i = 0; i < n; i++) {
-        SetCursorPosX(22);
-        if (GoldSidebarButton(L(tabs[i].en, tabs[i].ar), tabs[i].icon, g_menu.currentTab == i, sidebarW))
+    for (int i = 0; i < (int)(sizeof(tabs) / sizeof(tabs[0])); ++i) {
+        if (FlatSidebarButton(L(tabs[i].en, tabs[i].ar), tabs[i].icon, g_menu.currentTab == i, sidebarW))
             g_menu.currentTab = i;
-        Dummy(ImVec2(0, 6));
+        Dummy(ImVec2(0, 8));
     }
     EndGroup();
 }
@@ -1227,295 +1079,54 @@ static void DrawSidebar(float sidebarW, float winH, ImVec2 winPos) {
 static void DrawContentArea(float sidebarW, float winW, float winH, ImVec2 winPos) {
     bool need_save = false;
     ImDrawList* dl = GetWindowDrawList();
-    static float time = 0.0f;
-    time += ImGui::GetIO().DeltaTime;
+    ImVec2 a = ImVec2(winPos.x + sidebarW + 12.0f, winPos.y + 62.0f);
+    ImVec2 b = ImVec2(winPos.x + winW - 12.0f, winPos.y + winH - 12.0f);
 
-    // ======================================================================
-    // 12 طبقة من التوهج الخارجي للمحتوى
-    // ======================================================================
-    // ======================================================================
-// 12 طبقة من التوهج الخارجي للمحتوى (مصحح)
-// ======================================================================
-for (int i = 12; i > 0; i--) {
-    float alpha = (13 - i) * 20.0f * (0.5f + 0.5f * sinf(time * 0.5f + i * 0.6f));
-    float radiusOffset = i * 2.0f + 6.0f * sinf(time * 0.7f + i * 0.4f);
-    
-    int hue = (i * 37 + (int)(time * 20)) % 360;
-    float r = 0.5f + 0.5f * sinf(hue * 0.0174f);
-    float g = 0.5f + 0.5f * sinf(hue * 0.0174f + 2.094f);
-    float b_float = 0.5f + 0.5f * sinf(hue * 0.0174f + 4.188f);  // ✅ تغيير الاسم
-    
-    ImU32 glowColor = IM_COL32(
-        (int)(r * 255),
-        (int)(g * 255),
-        (int)(b_float * 255),  // ✅ استخدام الاسم الجديد
-        (int)alpha
-    );
-    
-    ImVec2 a = ImVec2(winPos.x + sidebarW + 32 - radiusOffset + 4.0f * sinf(time * 0.6f + i),
-                      winPos.y + 80 - radiusOffset + 4.0f * cosf(time * 0.8f + i * 0.5f));
-    ImVec2 b = ImVec2(winPos.x + winW - 16 + radiusOffset + 4.0f * cosf(time * 0.7f + i * 0.3f),
-                      winPos.y + winH - 20 + radiusOffset + 4.0f * sinf(time * 0.9f + i * 0.7f));
-    dl->AddRect(a, b, glowColor, 14.0f + i * 1.0f + 2.0f * sinf(time + i * 0.5f), 0, 1.5f + i * 0.1f);
-}
+    dl->AddRectFilled(a, b, UI_BG_CONTENT, 8.0f, ImDrawFlags_RoundCornersBottomRight);
+    dl->AddRect(a, b, IM_COL32(200, 30, 30, 120), 8.0f, 0, 1.0f);
 
-    // ======================================================================
-    // خلفية المحتوى مع تدرج نيوني متحرك
-    // ======================================================================
-    ImVec2 a = ImVec2(winPos.x + sidebarW + 32, winPos.y + 80);
-    ImVec2 b = ImVec2(winPos.x + winW - 16, winPos.y + winH - 20);
-    
-    float quantumPulse1 = 0.5f + 0.5f * sinf(time * 0.7f);
-    float quantumPulse2 = 0.5f + 0.5f * sinf(time * 1.3f + 0.8f);
-    float quantumPulse3 = 0.5f + 0.5f * sinf(time * 0.9f + 1.6f);
-    
-    ImU32 bg1 = IM_COL32(
-        (int)(5 + 25 * quantumPulse1),
-        (int)(2 + 15 * quantumPulse2),
-        (int)(20 + 40 * quantumPulse3),
-        255
-    );
-    ImU32 bg2 = IM_COL32(
-        (int)(10 + 20 * quantumPulse2),
-        (int)(5 + 18 * quantumPulse3),
-        (int)(30 + 35 * quantumPulse1),
-        255
-    );
-    ImU32 bg3 = IM_COL32(
-        (int)(20 + 15 * quantumPulse3),
-        (int)(8 + 20 * quantumPulse1),
-        (int)(40 + 30 * quantumPulse2),
-        255
-    );
-    ImU32 bg4 = IM_COL32(
-        (int)(8 + 20 * quantumPulse2),
-        (int)(3 + 15 * quantumPulse3),
-        (int)(25 + 35 * quantumPulse1),
-        255
-    );
-    dl->AddRectFilledMultiColor(a, b, bg1, bg2, bg3, bg4);
-    
-    // ======================================================================
-    // موجات الطاقة النانوية داخل المحتوى
-    // ======================================================================
-    ImVec2 mousePos = ImGui::GetIO().MousePos;
-    for (int wave = 0; wave < 8; wave++) {
-        float wavePhase = time * 1.2f + wave * 0.8f;
-        float waveY = a.y + 30 + wave * ((b.y - a.y - 60) / 7.0f);
-        waveY += 10.0f * sinf(wavePhase + (mousePos.x - winPos.x) * 0.01f + wave * 0.5f);
-        
-        float waveX = a.x + 20 + 10.0f * sinf(wavePhase * 0.6f + wave);
-        
-        int hueWave = (wave * 45 + (int)(time * 25)) % 360;
-        float rw = 0.5f + 0.5f * sinf(hueWave * 0.0174f);
-        float gw = 0.5f + 0.5f * sinf(hueWave * 0.0174f + 2.094f);
-        float bw = 0.5f + 0.5f * sinf(hueWave * 0.0174f + 4.188f);
-        
-        ImU32 waveColor = IM_COL32(
-            (int)(80 + 175 * rw),
-            (int)(30 + 150 * gw),
-            (int)(120 + 135 * bw),
-            (int)(30 + 60 * (0.5f + 0.5f * sinf(wavePhase * 0.5f)))
-        );
-        
-        dl->AddLine(
-            ImVec2(waveX, waveY - 10.0f * sinf(wavePhase * 0.8f + 0.3f)),
-            ImVec2(b.x - 20, waveY + 15.0f * sinf(wavePhase * 0.9f + 0.7f)),
-            waveColor, 1.5f + 0.5f * sinf(wavePhase * 0.3f)
-        );
-        
-        if (wave % 2 == 0) {
-            float dotX = a.x + 30 + (b.x - a.x - 60) * (0.5f + 0.5f * sinf(wavePhase * 0.7f + wave));
-            float dotY = waveY + 3.0f * sinf(wavePhase * 0.5f + wave * 1.1f);
-            dl->AddCircleFilled(
-                ImVec2(dotX, dotY),
-                2.0f + 2.0f * (0.5f + 0.5f * sinf(time * 1.8f + wave)),
-                IM_COL32(255, 200, 255, (int)(120 + 80 * (0.5f + 0.5f * sinf(time + wave)))),
-                8
-            );
-        }
-    }
+    const char* tabTitle = CurrentTabTitle();
+    dl->AddText(ImVec2(a.x + 16.0f, a.y + 12.0f), UI_TEXT_PRIMARY, tabTitle);
+    dl->AddText(ImVec2(b.x - 86.0f, a.y + 12.0f), UI_TEXT_SECONDARY, "CONTENT");
+    dl->AddLine(ImVec2(a.x + 16.0f, a.y + 36.0f), ImVec2(b.x - 16.0f, a.y + 36.0f), IM_COL32(40, 40, 40, 255), 1.0f);
 
-    // ======================================================================
-    // الجسيمات الهولوجرافية داخل المحتوى
-    // ======================================================================
-    static struct Particle {
-        float x, y, vx, vy, size, phase;
-    } particles[40];
-    static bool particlesInit = false;
-    
-    if (!particlesInit) {
-        for (int i = 0; i < 40; i++) {
-            particles[i].x = (float)(rand() % 1000) / 1000.0f;
-            particles[i].y = (float)(rand() % 1000) / 1000.0f;
-            particles[i].vx = (float)(rand() % 200 - 100) / 800.0f;
-            particles[i].vy = (float)(rand() % 200 - 100) / 800.0f;
-            particles[i].size = 1.0f + (float)(rand() % 30) / 10.0f;
-            particles[i].phase = (float)(rand() % 1000) / 100.0f;
-        }
-        particlesInit = true;
-    }
-
-    float width = b.x - a.x;
-    float height = b.y - a.y;
-    
-    for (int i = 0; i < 40; i++) {
-        particles[i].x += particles[i].vx * ImGui::GetIO().DeltaTime * 0.3f;
-        particles[i].y += particles[i].vy * ImGui::GetIO().DeltaTime * 0.3f;
-        
-        if (particles[i].x < 0 || particles[i].x > 1) particles[i].vx *= -1;
-        if (particles[i].y < 0 || particles[i].y > 1) particles[i].vy *= -1;
-        
-        float px = a.x + particles[i].x * width;
-        float py = a.y + particles[i].y * height;
-        float pulse = 0.5f + 0.5f * sinf(time * 1.5f + particles[i].phase);
-        float size = particles[i].size * (0.5f + 0.5f * pulse);
-        
-        int hueP = (i * 30 + (int)(time * 25)) % 360;
-        float rp = 0.5f + 0.5f * sinf(hueP * 0.0174f);
-        float gp = 0.5f + 0.5f * sinf(hueP * 0.0174f + 2.094f);
-        float bp = 0.5f + 0.5f * sinf(hueP * 0.0174f + 4.188f);
-        
-        ImU32 col = IM_COL32(
-            (int)(rp * 255),
-            (int)(gp * 255),
-            (int)(bp * 255),
-            (int)(100 + 155 * pulse)
-        );
-        
-        dl->AddCircleFilled(ImVec2(px, py), size, col, 12);
-        
-        if (pulse > 0.6f) {
-            dl->AddCircle(ImVec2(px, py), size * 2.0f, 
-                         IM_COL32(255, 255, 255, (int)(20 * pulse)), 12, 1.0f);
-        }
-    }
-
-    // ======================================================================
-    // الإطار الداخلي مع تأثير نيوني
-    // ======================================================================
-    ImVec2 frameA = a + ImVec2(4, 4);
-    ImVec2 frameB = b - ImVec2(4, 4);
-    dl->AddRectFilled(frameA, frameB, IM_COL32(0, 0, 0, 20), 12.0f);
-    dl->AddRect(frameA, frameB, IM_COL32(180, 0, 255, 100), 12.0f, 0, 1.5f);
-    dl->AddRect(frameA + ImVec2(2, 2), frameB - ImVec2(2, 2), IM_COL32(150, 0, 255, 40), 10.0f, 0, 1.0f);
-
-    // ======================================================================
-    // عنوان التبويب مع تأثير نيوني متطور
-    // ======================================================================
-    const char* titlesEn[] = { "Draw", "Play", "Queue", "Extra", "Info" };
-    const char* titlesAr[] = { "ﻢﺳﺭ", "ﺐﻌﻟ", "ﺭﻭﺩ", "ﻲﻓﺎﺿﺇ", "ﺕﺎﻣﻮﻠﻌﻣ" };
-    int idx = g_menu.currentTab;
-    
-    // خلفية العنوان
-    ImVec2 titleBgA = ImVec2(a.x + 14, a.y + 6);
-    ImVec2 titleBgB = ImVec2(b.x - 14, a.y + 44);
-    dl->AddRectFilled(titleBgA, titleBgB, IM_COL32(0, 0, 0, 150), 8.0f);
-    dl->AddRect(titleBgA, titleBgB, IM_COL32(255, 0, 150, 120), 8.0f, 0, 1.5f);
-    
-    // نص العنوان مع توهج
-    char tabTitle[128];
-    snprintf(tabTitle, sizeof(tabTitle), " ✦ %s ✦ ", L(titlesEn[idx], titlesAr[idx]));
-    ImVec2 ts = CalcTextSize(tabTitle);
-    ImVec2 tp = ImVec2((a.x + b.x) * 0.5f - ts.x * 0.5f, a.y + 10);
-    
-    // طبقات توهج النص
-    for (int i = 4; i > 0; i--) {
-        float alpha = (5 - i) * 20.0f * (0.5f + 0.5f * sinf(time * 0.8f + i * 0.5f));
-        ImU32 glowCol = IM_COL32(
-            200 + 55 * (i % 3 == 0 ? 1 : 0),
-            50 + 150 * (i % 3 == 1 ? 1 : 0),
-            255,
-            (int)alpha
-        );
-        dl->AddText(ImVec2(tp.x + 1.5f * sinf(time * 0.7f + i), tp.y - i * 0.8f), glowCol, tabTitle);
-    }
-    
-    // النص الأساسي
-    dl->AddText(tp, IM_COL32(255, 255, 255, 255), tabTitle);
-    
-    // خط زخرفي تحت العنوان
-    float lineY = a.y + 48;
-    float lineStart = a.x + 30;
-    float lineEnd = b.x - 30;
-    
-    // خط الطاقة الرئيسي
-    for (int i = 0; i < 60; i++) {
-        float t = (float)i / 59.0f;
-        float x = lineStart + (lineEnd - lineStart) * t;
-        float yOffset = 2.0f * sinf(time * 2.5f + t * 6.0f + 1.2f);
-        float pulse = 0.5f + 0.5f * sinf(time * 1.8f + t * 4.0f);
-        
-        int hueLine = (i * 20 + (int)(time * 30)) % 360;
-        float rl = 0.5f + 0.5f * sinf(hueLine * 0.0174f);
-        float gl = 0.5f + 0.5f * sinf(hueLine * 0.0174f + 2.094f);
-        float bl = 0.5f + 0.5f * sinf(hueLine * 0.0174f + 4.188f);
-        
-        dl->AddLine(
-            ImVec2(x, lineY + yOffset),
-            ImVec2(x + 2.0f, lineY + yOffset + 2.0f * sinf(time + t * 3.0f)),
-            IM_COL32((int)(rl * 255), (int)(gl * 255), (int)(bl * 255), (int)(150 + 100 * pulse)),
-            1.5f + 1.5f * pulse
-        );
-    }
-    
-    // نقاط زخرفية على الخط
-    for (int i = 0; i < 7; i++) {
-        float t = (float)i / 6.0f;
-        float x = lineStart + (lineEnd - lineStart) * t;
-        float pulse = 0.5f + 0.5f * sinf(time * 2.0f + i * 1.2f + 0.3f);
-        float yOff = 3.0f * sinf(time * 1.5f + i * 1.0f);
-        
-        int hueDot = (i * 50 + (int)(time * 25)) % 360;
-        float rd = 0.5f + 0.5f * sinf(hueDot * 0.0174f);
-        float gd = 0.5f + 0.5f * sinf(hueDot * 0.0174f + 2.094f);
-        float bd = 0.5f + 0.5f * sinf(hueDot * 0.0174f + 4.188f);
-        
-        dl->AddCircleFilled(
-            ImVec2(x, lineY + yOff),
-            3.0f + 2.0f * pulse,
-            IM_COL32((int)(rd * 255), (int)(gd * 255), (int)(bd * 255), (int)(150 + 100 * pulse)),
-            12
-        );
-        
-        if (pulse > 0.7f) {
-            dl->AddCircle(ImVec2(x, lineY + yOff), 6.0f + 4.0f * pulse,
-                         IM_COL32(255, 255, 255, (int)(20 * pulse)), 12, 1.0f);
-        }
-    }
-
-    // ======================================================================
-    // بداية المحتوى
-    // ======================================================================
-    SetCursorScreenPos(ImVec2(a.x + 16, a.y + 58));
+    SetCursorScreenPos(ImVec2(a.x + 12.0f, a.y + 44.0f));
     PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
+    PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0, 0, 0, 0));
+    PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(45.0f / 255.0f, 45.0f / 255.0f, 45.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(70.0f / 255.0f, 70.0f / 255.0f, 70.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_ScrollbarGrabActive, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_Button, ImVec4(35.0f / 255.0f, 35.0f / 255.0f, 35.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_ButtonActive, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_Text, ImVec4(230.0f / 255.0f, 230.0f / 255.0f, 230.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_Border, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 120.0f / 255.0f));
     PushStyleVar(ImGuiStyleVar_ScrollbarSize, 6.0f);
-    BeginChild(O("##Content"), ImVec2(b.x - a.x - 32, b.y - a.y - 76), false);
+    PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
+    BeginChild(O("##Content"), ImVec2(b.x - a.x - 24.0f, b.y - a.y - 56.0f), false);
 
-    // ======================================================================
-    // تبويب Draw
-    // ======================================================================
-    switch (idx) {
+    int idx = g_menu.currentTab;
+switch (idx) {
         case 0: { // Draw Tab
             Dummy(ImVec2(0, 4));
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ LANGUAGE", "✦ ﺔﻐﻠﻟﺍ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ LANGUAGE", "✦ ﺔﻐﻠﻟﺍ"));
             Dummy(ImVec2(0, 8));
             PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
             int curLang = persistent_int["iLang"];
             float bw = (GetContentRegionAvail().x - 10) * 0.5f;
             
             bool isEng = (curLang == 0);
-            PushStyleColor(ImGuiCol_Button, isEng ? ImVec4(1.0f, 0.0f, 0.8f, 1.0f) : ImVec4(0.05f, 0.02f, 0.12f, 1.0f));
-            PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.0f, 0.6f, 1.0f));
-            PushStyleColor(ImGuiCol_Text, isEng ? ImVec4(1, 1, 1, 1) : ImVec4(0.6f, 0.7f, 0.8f, 1));
+            PushStyleColor(ImGuiCol_Button, isEng ? ImVec4(1.0f, 0.0f, 0.8f, 1.0f) : ImVec4(20.0f / 255.0f, 20.0f / 255.0f, 20.0f / 255.0f, 1.0f));
+            PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(215.0f / 255.0f, 45.0f / 255.0f, 45.0f / 255.0f, 1.0f));
+            PushStyleColor(ImGuiCol_Text, isEng ? ImVec4(1, 1, 1, 1) : ImVec4(130.0f / 255.0f, 130.0f / 255.0f, 130.0f / 255.0f, 1));
             if (Button("✦ English ✦", ImVec2(bw, 44))) { persistent_int["iLang"] = 0; need_save = true; }
             PopStyleColor(3);
             SameLine();
             
             bool isAr = (curLang == 1);
-            PushStyleColor(ImGuiCol_Button, isAr ? ImVec4(1.0f, 0.0f, 0.8f, 1.0f) : ImVec4(0.05f, 0.02f, 0.12f, 1.0f));
-            PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.0f, 0.6f, 1.0f));
-            PushStyleColor(ImGuiCol_Text, isAr ? ImVec4(1, 1, 1, 1) : ImVec4(0.6f, 0.7f, 0.8f, 1));
+            PushStyleColor(ImGuiCol_Button, isAr ? ImVec4(1.0f, 0.0f, 0.8f, 1.0f) : ImVec4(20.0f / 255.0f, 20.0f / 255.0f, 20.0f / 255.0f, 1.0f));
+            PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(215.0f / 255.0f, 45.0f / 255.0f, 45.0f / 255.0f, 1.0f));
+            PushStyleColor(ImGuiCol_Text, isAr ? ImVec4(1, 1, 1, 1) : ImVec4(130.0f / 255.0f, 130.0f / 255.0f, 130.0f / 255.0f, 1));
             if (Button("✦ ﺔﻴﺑﺮﻌﻟﺍ ✦", ImVec2(bw, 44))) { persistent_int["iLang"] = 1; need_save = true; }
             PopStyleColor(3);
             PopStyleVar();
@@ -1531,7 +1142,7 @@ for (int i = 12; i > 0; i--) {
             need_save |= GoldToggle(L("✦ Bounce Sync", "✦ ﺩﺍﺪﺗﺭﻻﺍ ﺔﻨﻣﺍﺰﻣ"), L("Bounce markers", "ﺩﺍﺪﺗﺭﻻﺍ ﻡﺎﻗﺭﺃ"), &persistent_bool[O("bESP_BounceMarkers")]);
             
             Dummy(ImVec2(0, 16));
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ Line Style", "✦ ﻂﻴﻄﺨﻟﺍ ﻂﻤﻧ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ Line Style", "✦ ﻂﻴﻄﺨﻟﺍ ﻂﻤﻧ"));
             Dummy(ImVec2(0, 8));
             const char* items = "✦ SOLID ✦\0✦ STRIPE ✦\0✦ COLORS ✦\0";
             const char* itemsAr = "✦ ﻞﺼﺘﻣ ✦\0✦ ﻊﻄﻘﺘﻣ ✦\0✦ ﻥﺍﻮﻟﺃ ✦\0";
@@ -1604,165 +1215,27 @@ for (int i = 12; i > 0; i--) {
         case 1: { // Play Tab
             Dummy(ImVec2(0, 4));
             
-            // ======================================================================
-            // زر AutoPlay المتطور جداً - 10 طبقات توهج
-            // ======================================================================
             ImVec2 btnPos = GetCursorScreenPos();
             float btnW = GetContentRegionAvail().x;
-            float btnH = 80.0f;
-
+            float btnH = 58.0f;
             bool isAutoPlayOn = persistent_bool[O("bAutoPlay")];
             ImDrawList* dl2 = GetWindowDrawList();
-            ImGuiIO& io2 = ImGui::GetIO();
 
-            // 10 طبقات من التوهج الخارجي
-            for (int i = 10; i > 0; i--) {
-                float pulse = 0.5f + 0.5f * sinf(time * 1.5f + i * 0.7f);
-                float alpha = (11 - i) * 20.0f * pulse;
-                float offset = i * 4.0f + 8.0f * sinf(time * 1.2f + i * 0.5f);
-                
-                int hue = (i * 37 + (int)(time * 25)) % 360;
-                float r = 0.5f + 0.5f * sinf(hue * 0.0174f);
-                float g = 0.5f + 0.5f * sinf(hue * 0.0174f + 2.094f);
-                float b = 0.5f + 0.5f * sinf(hue * 0.0174f + 4.188f);
-                
-                ImU32 glowCol = IM_COL32(
-                    (int)(r * 255),
-                    (int)(g * 255),
-                    (int)(b * 255),
-                    (int)alpha
-                );
-                dl2->AddRect(
-                    ImVec2(btnPos.x - offset, btnPos.y - offset),
-                    ImVec2(btnPos.x + btnW + offset, btnPos.y + btnH + offset),
-                    glowCol, 0, 2.0f
-                );
-            }
+            ImU32 btnBg = isAutoPlayOn ? IM_COL32(200, 30, 30, 255) : UI_BUTTON_INACTIVE;
+            ImU32 btnBorder = isAutoPlayOn ? UI_ACCENT_RED : UI_BORDER_INACTIVE;
+            dl2->AddRectFilled(btnPos, ImVec2(btnPos.x + btnW, btnPos.y + btnH), btnBg, 6.0f);
+            dl2->AddRect(btnPos, ImVec2(btnPos.x + btnW, btnPos.y + btnH), btnBorder, 6.0f, 0, 1.0f);
+            dl2->AddText(ImVec2(btnPos.x + 14.0f, btnPos.y + 10.0f), UI_TEXT_PRIMARY,
+                         isAutoPlayOn ? L("AUTO PLAY ENABLED", "ﻲﺋﺎﻘﻠﺘﻟﺍ ﺐﻌﻠﻟﺍ ﻞﻌﻔﻣ") : L("AUTO PLAY DISABLED", "ﻲﺋﺎﻘﻠﺘﻟﺍ ﺐﻌﻠﻟﺍ ﻞﻄﻌﻣ"));
+            dl2->AddText(ImVec2(btnPos.x + 14.0f, btnPos.y + 31.0f),
+                         isAutoPlayOn ? IM_COL32(255, 230, 230, 255) : UI_TEXT_SECONDARY,
+                         L("Tap to toggle the feature", "ﺔﻴﺼﺧﺎﻟﺍ ﻞﻴﻐﺸﺗﻭ ﻑﺎﻘﻳﻹ ﺲﻤﻟﺍ"));
 
-            // خلفية الزر مع تدرج متحرك
-            float bgPulse1 = 0.5f + 0.5f * sinf(time * 0.8f);
-            float bgPulse2 = 0.5f + 0.5f * sinf(time * 1.2f + 0.7f);
-            
-            ImU32 bg1 = isAutoPlayOn ? 
-                IM_COL32((int)(60 + 30 * bgPulse1), (int)(45 + 20 * bgPulse2), 15, 230) :
-                IM_COL32((int)(40 + 20 * bgPulse2), (int)(10 + 15 * bgPulse1), (int)(60 + 30 * bgPulse1), 230);
-            ImU32 bg2 = isAutoPlayOn ? 
-                IM_COL32((int)(40 + 25 * bgPulse2), (int)(30 + 15 * bgPulse1), 10, 240) :
-                IM_COL32((int)(30 + 15 * bgPulse1), (int)(5 + 10 * bgPulse2), (int)(40 + 25 * bgPulse2), 240);
-            dl2->AddRectFilledMultiColor(
-                ImVec2(btnPos.x, btnPos.y),
-                ImVec2(btnPos.x + btnW, btnPos.y + btnH),
-                bg1, bg1, bg2, bg2
-            );
-
-            // إطار الزر المتوهج
-            ImU32 borderCol = isAutoPlayOn ? 
-                IM_COL32(255, 215 + 40 * (0.5f + 0.5f * sinf(time * 1.5f)), 0, 255) :
-                IM_COL32(180 + 75 * (0.5f + 0.5f * sinf(time * 1.3f)), 0, 255, 255);
-            dl2->AddRect(
-                ImVec2(btnPos.x, btnPos.y),
-                ImVec2(btnPos.x + btnW, btnPos.y + btnH),
-                borderCol, 0, 3.0f
-            );
-
-            // خطوط المسح الضوئي المتقدمة
-            static float scanTime = 0.0f;
-            scanTime += io2.DeltaTime * 2.5f;
-            float scanPos = fmod(scanTime, 1.0f);
-            float scanPos2 = fmod(scanTime + 0.5f, 1.0f);
-
-            ImU32 lineCol1 = isAutoPlayOn ? IM_COL32(255, 215, 0, 150) : IM_COL32(180, 0, 255, 150);
-            ImU32 lineCol2 = isAutoPlayOn ? IM_COL32(255, 215, 0, 80) : IM_COL32(180, 0, 255, 80);
-            
-            dl2->AddLine(
-                ImVec2(btnPos.x + scanPos * btnW, btnPos.y),
-                ImVec2(btnPos.x + scanPos * btnW, btnPos.y + btnH),
-                lineCol1, 2.5f
-            );
-            dl2->AddLine(
-                ImVec2(btnPos.x, btnPos.y + scanPos * btnH),
-                ImVec2(btnPos.x + btnW, btnPos.y + scanPos * btnH),
-                lineCol1, 2.5f
-            );
-            dl2->AddLine(
-                ImVec2(btnPos.x + scanPos2 * btnW, btnPos.y),
-                ImVec2(btnPos.x + scanPos2 * btnW, btnPos.y + btnH),
-                lineCol2, 1.5f
-            );
-            dl2->AddLine(
-                ImVec2(btnPos.x, btnPos.y + scanPos2 * btnH),
-                ImVec2(btnPos.x + btnW, btnPos.y + scanPos2 * btnH),
-                lineCol2, 1.5f
-            );
-
-            // نقاط LED متقدمة
-            ImU32 ledCol = isAutoPlayOn ? IM_COL32(255, 215, 0, 255) : IM_COL32(255, 50, 50, 255);
-            static float ledTime = 0.0f;
-            ledTime += io2.DeltaTime * 5.0f;
-            
-            for (int i = 0; i < 6; i++) {
-                float alpha = isAutoPlayOn ? 
-                    (100 + 155 * (0.5f + 0.5f * sinf(ledTime + i * 1.2f + 0.5f))) :
-                    80 + 40 * (0.5f + 0.5f * sinf(ledTime * 0.5f + i * 0.8f));
-                float xPos = btnPos.x + btnW - 45 - i * 14;
-                float yPos = btnPos.y + btnH * 0.5f + 10.0f * sinf(time * 2.0f + i * 0.7f);
-                
-                dl2->AddCircleFilled(
-                    ImVec2(xPos, yPos),
-                    5.0f,
-                    IM_COL32(ledCol >> 16 & 0xFF, ledCol >> 8 & 0xFF, ledCol & 0xFF, (int)alpha)
-                );
-                
-                if (alpha > 200) {
-                    dl2->AddCircle(
-                        ImVec2(xPos, yPos),
-                        10.0f,
-                        IM_COL32(255, 255, 255, (int)(20 * alpha / 255)),
-                        16,
-                        1.0f
-                    );
-                }
-            }
-
-            // الأيقونة الرئيسية
-            const char* icon = isAutoPlayOn ? "✦" : "◇";
-            ImVec2 iconSize = CalcTextSize(icon);
-            dl2->AddText(
-                ImVec2(btnPos.x + 25, btnPos.y + (btnH - iconSize.y) * 0.5f),
-                isAutoPlayOn ? IM_COL32(255, 215, 0, 255) : IM_COL32(180, 0, 255, 255),
-                icon
-            );
-
-            // النص الرئيسي مع طبقات توهج متعددة
-            const char* btnText = isAutoPlayOn ? 
-                L("✦ AUTO PLAY ACTIVE ✦", "✦ ﻲﺋﺎﻘﻠﺘﻟﺍ ﺐﻌﻠﻟﺍ ﻞﻴﻌﻔﻣ ✦") :
-                L("✦ AUTO PLAY OFFLINE ✦", "✦ ﻲﺋﺎﻘﻠﺘﻟﺍ ﺐﻌﻠﻟﺍ ﻞﻄﻌﻣ ✦");
-            ImVec2 textSize = CalcTextSize(btnText);
-            ImVec2 textPos = ImVec2(
-                btnPos.x + 55 + (btnW - 55 - textSize.x) * 0.5f,
-                btnPos.y + (btnH - textSize.y) * 0.5f
-            );
-
-            for (int i = 5; i > 0; i--) {
-                float alpha = i * 25.0f * (0.5f + 0.5f * sinf(time * 1.0f + i * 0.5f));
-                ImU32 glowText = isAutoPlayOn ? 
-                    IM_COL32(255, 215, 0, (int)alpha) :
-                    IM_COL32(180, 0, 255, (int)alpha);
-                dl2->AddText(
-                    ImVec2(textPos.x + 2.0f * sinf(time * 0.5f + i * 0.3f), textPos.y - i * 0.8f),
-                    glowText,
-                    btnText
-                );
-            }
-            dl2->AddText(textPos, IM_COL32(255, 255, 255, 255), btnText);
-
-            // زر غير مرئي
             SetCursorScreenPos(btnPos);
             PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
             PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
             PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-            PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
-
+            PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f);
             if (Button(O("##AutoPlayBtn"), ImVec2(btnW, btnH))) {
                 persistent_bool[O("bAutoPlay")] = !persistent_bool[O("bAutoPlay")];
                 AutoPlay::bAutoPlaying = persistent_bool[O("bAutoPlay")];
@@ -1774,7 +1247,6 @@ for (int i = 12; i > 0; i--) {
                 }
                 need_save = true;
             }
-
             PopStyleVar();
             PopStyleColor(3);
 
@@ -1785,7 +1257,7 @@ for (int i = 12; i > 0; i--) {
             need_save |= GoldToggle(L("✦ Auto Aim Mode", "✦ ﻲﺋﺎﻘﻠﺘﻟﺍ ﺐﻳﻮﺼﺘﻟﺍ ﻊﺿﻭ"), L("", ""), &persistent_bool[O("bAutoAimSwitch")]);
             
             Dummy(ImVec2(0, 12));
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ Automation Speed", "✦ ﺔﻴﺋﺎﻘﻠﺘﻟﺍ ﺔﻋﺮﺳ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ Automation Speed", "✦ ﺔﻴﺋﺎﻘﻠﺘﻟﺍ ﺔﻋﺮﺳ"));
             Dummy(ImVec2(0, 4));
             if (!persistent_int.count(O("iAutoSpeed"))) persistent_int[O("iAutoSpeed")] = 0;
             const char* speedItems = "✦ Maximum Fast ✦\0✦ Minimum Slow ✦\0";
@@ -1794,7 +1266,7 @@ for (int i = 12; i > 0; i--) {
                                    persistent_int["iLang"] == 1 ? speedItemsAr : speedItems);
             
             Dummy(ImVec2(0, 8));
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ Play Style", "✦ ﺐﻌﻠﻟﺍ ﻂﻤﻧ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ Play Style", "✦ ﺐﻌﻠﻟﺍ ﻂﻤﻧ"));
             Dummy(ImVec2(0, 4));
             if (!persistent_int.count(O("iPlayStyle"))) persistent_int[O("iPlayStyle")] = 0;
             const char* styleItems = "✦ Natural Play ✦\0✦ Instant Mode ✦\0";
@@ -1803,7 +1275,7 @@ for (int i = 12; i > 0; i--) {
                                    persistent_int["iLang"] == 1 ? styleItemsAr : styleItems);
             
             Dummy(ImVec2(0, 8));
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ 9-Ball Strategy", "✦ ﺕﺍﺮﻛ 9 ﺔﻴﺠﻴﺗﺍﺮﺘﺳﺍ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ 9-Ball Strategy", "✦ ﺕﺍﺮﻛ 9 ﺔﻴﺠﻴﺗﺍﺮﺘﺳﺍ"));
             Dummy(ImVec2(0, 4));
             if (!persistent_int.count(O("iNineMode"))) persistent_int[O("iNineMode")] = 1;
             const char* nineItems = "✦ Best Shot ✦\0✦ Snipe 9 ✦\0";
@@ -1819,7 +1291,7 @@ for (int i = 12; i > 0; i--) {
             need_save |= GoldToggle(L("✦ Show Pocket Target Visual", "✦ ﻑﺪﻬﻟﺍ ﺐﻴﺠﻟﺍ ﺽﺮﻋ"), L("", ""), &persistent_bool[O("bPocketTargetVisual")]);
             
             Dummy(ImVec2(0, 12));
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ Power Bar Side", "✦ ﻩﻮﻘﻟﺍ ﻂﻳﺮﺷ ﻊﻗﻮﻣ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ Power Bar Side", "✦ ﻩﻮﻘﻟﺍ ﻂﻳﺮﺷ ﻊﻗﻮﻣ"));
             Dummy(ImVec2(0, 4));
             if (!persistent_int.count(O("iPowerBarSide"))) persistent_int[O("iPowerBarSide")] = 0;
             const char* powerItems = "✦ Left Side ✦\0✦ Right Side ✦\0";
@@ -1844,7 +1316,7 @@ for (int i = 12; i > 0; i--) {
                                     L("", ""), &persistent_bool[O("bAutoQueue")]);
             Dummy(ImVec2(0, 12));
             
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ Mode", "✦ ﻊﺿﻮﻟﺍ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ Mode", "✦ ﻊﺿﻮﻟﺍ"));
             Dummy(ImVec2(0, 4));
             if (!persistent_int.count(O("iAutoQueue_Mode"))) persistent_int[O("iAutoQueue_Mode")] = 0;
             const char* qItems = "✦ Last Selected ✦\0✦ Smart ✦\0✦ Fix Table ✦\0";
@@ -1867,7 +1339,7 @@ for (int i = 12; i > 0; i--) {
             
             if (persistent_int[O("iAutoQueue_Mode")] == 2) {
                 Dummy(ImVec2(0, 12));
-                TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ Select Table", "✦ ﺔﻟﻭﺎﻄﻟﺍ ﺮﺘﺧﺍ"));
+                TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ Select Table", "✦ ﺔﻟﻭﺎﻄﻟﺍ ﺮﺘﺧﺍ"));
                 Dummy(ImVec2(0, 4));
                 
                 static const char* tableLabels[] = {
@@ -1903,15 +1375,15 @@ for (int i = 12; i > 0; i--) {
                     float pulse = 0.5f + 0.5f * sinf(time * 2.0f + i * 0.5f);
 
                     if (isSel) {
-                        ImU32 selBg1 = IM_COL32(255, 0, 150, 255);
-                        ImU32 selBg2 = IM_COL32(180, 0, 255, 255);
-                        ImU32 selBg3 = IM_COL32(0, 200, 255, 255);
-                        ImU32 selBg4 = IM_COL32(255, 0, 150, 255);
+                        ImU32 selBg1 = IM_COL32(200, 30, 30, 255);
+                        ImU32 selBg2 = IM_COL32(200, 30, 30, 255);
+                        ImU32 selBg3 = IM_COL32(200, 30, 30, 255);
+                        ImU32 selBg4 = IM_COL32(200, 30, 30, 255);
                         dl2->AddRectFilledMultiColor(p, p + size, selBg1, selBg2, selBg3, selBg4);
                         
                         for (int j = 3; j > 0; j--) {
                             float alpha = (4 - j) * 30 * pulse;
-                            ImU32 glowSel = IM_COL32(255, 0, 150, (int)alpha);
+                            ImU32 glowSel = IM_COL32(200, 30, 30, (int)alpha);
                             dl2->AddRect(
                                 p - ImVec2(j * 2, j * 2),
                                 p + size + ImVec2(j * 2, j * 2),
@@ -1937,11 +1409,11 @@ for (int i = 12; i > 0; i--) {
                                 dl2->AddRect(
                                     p - ImVec2(j, j),
                                     p + size + ImVec2(j, j),
-                                    IM_COL32(255, 0, 150, (int)alpha),
+                                    IM_COL32(200, 30, 30, (int)alpha),
                                     rounding + j, 0, 1.5f
                                 );
                             }
-                            dl2->AddRectFilled(p, p + size, IM_COL32(255, 0, 150, 30), rounding);
+                            dl2->AddRectFilled(p, p + size, IM_COL32(200, 30, 30, 30), rounding);
                         }
                         
                         if (g_ArialBlackFont) PushFont(g_ArialBlackFont);
@@ -2011,7 +1483,7 @@ for (int i = 12; i > 0; i--) {
             Dummy(ImVec2(0, 4));
             
             if (g_ArialBlackFont) PushFont(g_ArialBlackFont);
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ Device Information", "✦ ﺯﺎﻬﺠﻟﺍ ﺕﺎﻣﻮﻠﻌﻣ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ Device Information", "✦ ﺯﺎﻬﺠﻟﺍ ﺕﺎﻣﻮﻠﻌﻣ"));
             if (g_ArialBlackFont) PopFont();
             Dummy(ImVec2(0, 8));
             
@@ -2056,7 +1528,7 @@ for (int i = 12; i > 0; i--) {
             Dummy(ImVec2(0, 16));
             
             if (g_ArialBlackFont) PushFont(g_ArialBlackFont);
-            TextColored(ImVec4(1.0f, 0.0f, 0.8f, 1.0f), "%s", L("✦ License Information", "✦ ﺺﻴﺧﺮﺘﻟﺍ ﺕﺎﻣﻮﻠﻌﻣ"));
+            TextColored(ImVec4(0.78f, 0.12f, 0.12f, 1.0f), "%s", L("✦ License Information", "✦ ﺺﻴﺧﺮﺘﻟﺍ ﺕﺎﻣﻮﻠﻌﻣ"));
             if (g_ArialBlackFont) PopFont();
             Dummy(ImVec2(0, 8));
             
@@ -2097,10 +1569,11 @@ for (int i = 12; i > 0; i--) {
         }
     }
 
+    
     if (need_save) save_persistence();
     EndChild();
-    PopStyleVar();
-    PopStyleColor();
+    PopStyleVar(2);
+    PopStyleColor(10);
 }
 
 // ============================================
@@ -2128,43 +1601,41 @@ INLINE void DrawMenu(ImGuiIO& io) {
             SetNextWindowSize(ImVec2(winW, winH), ImGuiCond_Always);
             SetNextWindowPos(ImVec2(Width / 2.0f, Height / 2.0f), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
 
-            PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.04f, 0.08f, 0.98f * g_menu.menuAlpha));
-            PushStyleVar(ImGuiStyleVar_WindowRounding, 18.0f);
+            PushStyleColor(ImGuiCol_WindowBg, ImVec4(10.0f / 255.0f, 10.0f / 255.0f, 10.0f / 255.0f, 0.98f * g_menu.menuAlpha));
+            PushStyleColor(ImGuiCol_Border, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 180.0f / 255.0f));
+            PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
             PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-            PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
             PushStyleVar(ImGuiStyleVar_Alpha, g_menu.menuAlpha);
 
             ImGuiWindowFlags wf = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
             if (Begin(O("##ENOMenu"), &g_menu.isOpen, wf)) {
                 ImDrawList* dl = GetWindowDrawList();
                 ImVec2 wp = GetWindowPos();
-                DrawOrnateFrame(dl, wp, ImVec2(wp.x + winW, wp.y + winH));
+                ImVec2 ws = GetWindowSize();
 
-                ImVec2 a = ImVec2(wp.x + 40, wp.y + 10);
-                ImVec2 b = ImVec2(wp.x + winW - 40, wp.y + 56);
-                dl->AddRectFilled(a, b, IM_COL32(0, 8, 20, 255), 8.0f);
-                dl->AddRect(a, b, NEON_GOLD, 8.0f, 0, 2.0f);
+                dl->AddRectFilled(wp, ImVec2(wp.x + ws.x, wp.y + 50.0f), UI_BG_SIDEBAR, 8.0f, ImDrawFlags_RoundCornersTop);
+                dl->AddLine(ImVec2(wp.x, wp.y + 50.0f), ImVec2(wp.x + ws.x, wp.y + 50.0f), UI_ACCENT_RED, 1.0f);
 
-                float cs = 10.0f;
-                dl->AddLine(ImVec2(a.x, a.y + cs), ImVec2(a.x + cs, a.y), NEON_GOLD, 2.5f);
-                dl->AddLine(ImVec2(b.x, a.y + cs), ImVec2(b.x - cs, a.y), NEON_GOLD, 2.5f);
-                dl->AddLine(ImVec2(a.x, b.y - cs), ImVec2(a.x + cs, b.y), NEON_GOLD, 2.5f);
-                dl->AddLine(ImVec2(b.x, b.y - cs), ImVec2(b.x - cs, b.y), NEON_GOLD, 2.5f);
+                const char* title = O("WATAN - QP ENO");
+                ImVec2 ts = CalcTextSize(title);
+                DrawBoldText(dl, ImVec2(wp.x + (ws.x - ts.x) * 0.5f, wp.y + 16.0f), UI_TEXT_PRIMARY, title);
+                dl->AddText(ImVec2(wp.x + ws.x - 96.0f, wp.y + 16.0f), UI_TEXT_SECONDARY, "v1.0");
 
-                const char* t = CurrentTabTitle();
-                char fullTitle[128];
-                snprintf(fullTitle, sizeof(fullTitle), " %s ", t);
-                ImVec2 ts = CalcTextSize(fullTitle);
-                ImVec2 tp = ImVec2(wp.x + (winW - ts.x) * 0.5f, a.y + (46 - ts.y) * 0.5f);
-                DrawBoldText(dl, tp, NEON_GOLD, fullTitle);
+                SetCursorScreenPos(ImVec2(wp.x + ws.x - 42.0f, wp.y + 10.0f));
+                InvisibleButton(O("##MenuClose"), ImVec2(28.0f, 28.0f));
+                bool closeHovered = IsItemHovered();
+                if (IsItemClicked()) g_menu.isOpen = false;
+                dl->AddRectFilled(ImVec2(wp.x + ws.x - 42.0f, wp.y + 10.0f), ImVec2(wp.x + ws.x - 14.0f, wp.y + 38.0f), closeHovered ? IM_COL32(200, 30, 30, 255) : IM_COL32(25, 25, 25, 255), 6.0f);
+                dl->AddText(ImVec2(wp.x + ws.x - 33.0f, wp.y + 16.0f), UI_TEXT_PRIMARY, "X");
 
-                float sidebarW = 330.0f;
+                float sidebarW = 188.0f;
                 DrawSidebar(sidebarW, winH, wp);
                 DrawContentArea(sidebarW, winW, winH, wp);
             }
             End();
             PopStyleVar(4);
-            PopStyleColor();
+            PopStyleColor(2);
         }
     }
 }
@@ -2177,103 +1648,40 @@ static void DrawFloatingButton(ImGuiIO& io) {
     static ImVec2 buttonPos = ImVec2(80, 160);
     static bool isDragging = false;
     static float hoverAnim = 0.0f;
-    static float time = 0.0f;
-    time += io.DeltaTime * 0.8f;
 
-    const float BASE_RADIUS = 44.0f;
-    const float SIZE = BASE_RADIUS * 2.0f + 30.0f;
-    
+    const float RADIUS = 36.0f;
+    const float SIZE = RADIUS * 2.0f + 16.0f;
+
     ImGui::SetNextWindowPos(buttonPos, ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(SIZE, SIZE), ImGuiCond_Always);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    
-    if (ImGui::Begin(O("##NEON_Float"), nullptr, 
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
-        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground | 
+
+    if (ImGui::Begin(O("##NEON_Float"), nullptr,
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground |
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
-        
+
         ImDrawList* dl = ImGui::GetWindowDrawList();
-        ImVec2 center = ImVec2(buttonPos.x + SIZE/2, buttonPos.y + SIZE/2);
-        
+        ImVec2 center = ImVec2(buttonPos.x + SIZE * 0.5f, buttonPos.y + SIZE * 0.5f);
+
         ImGui::SetCursorPos(ImVec2(0, 0));
         ImGui::InvisibleButton(O("##NEON_FloatHit"), ImVec2(SIZE, SIZE));
-        
         bool hovered = ImGui::IsItemHovered();
         bool active = ImGui::IsItemActive();
-        
-        float hoverTarget = hovered ? 1.0f : 0.0f;
-        hoverAnim += (hoverTarget - hoverAnim) * io.DeltaTime * 12.0f;
-        float scale = 1.0f + hoverAnim * 0.12f;
-        float radius = BASE_RADIUS * scale;
-        
-        // 14 حلقة توهج خارجية
-        for (int i = 0; i < 14; i++) {
-            float r = radius + i * 4.0f + sinf(time * 0.4f + i * 0.6f) * 2.0f;
-            float alpha = (14 - i) * 10.0f * (0.3f + 0.7f * (0.5f + 0.5f * sinf(time * 0.25f + i * 0.5f)));
-            alpha = ImClamp(alpha, 0.0f, 140.0f);
-            
-            ImU32 color;
-            if (i < 5) color = IM_COL32(255, 0, 150, (int)alpha);
-            else if (i < 10) color = IM_COL32(180, 0, 255, (int)alpha);
-            else color = IM_COL32(0, 200, 255, (int)alpha);
-            
-            dl->AddCircle(center, r, color, 64, 1.2f + i * 0.06f);
+
+        hoverAnim += ((hovered ? 1.0f : 0.0f) - hoverAnim) * io.DeltaTime * 12.0f;
+        ImU32 bg = hovered ? IM_COL32(28, 28, 28, 230) : IM_COL32(20, 20, 20, 220);
+        dl->AddCircleFilled(center, RADIUS, bg, 48);
+        dl->AddCircle(center, RADIUS, UI_ACCENT_RED, 48, 2.0f);
+        if (hovered) dl->AddCircle(center, RADIUS + 6.0f, IM_COL32(200, 30, 30, 70), 48, 1.5f);
+
+        for (int i = -1; i <= 1; ++i) {
+            float y = center.y + i * 8.0f;
+            dl->AddLine(ImVec2(center.x - 10.0f, y), ImVec2(center.x + 10.0f, y), UI_TEXT_PRIMARY, 2.0f);
         }
-        
-        // الخلفية الداخلية
-        float coreSize = radius * 0.75f;
-        for (int i = 0; i < 3; i++) {
-            float r = coreSize * (1.0f - i * 0.2f);
-            float alpha = 80 - i * 25;
-            ImU32 glowColor;
-            if (i == 0) glowColor = IM_COL32(255, 0, 150, (int)alpha);
-            else if (i == 1) glowColor = IM_COL32(180, 0, 255, (int)alpha);
-            else glowColor = IM_COL32(0, 200, 255, (int)alpha);
-            dl->AddCircleFilled(center, r, glowColor, 48);
-        }
-        
-        // القلب المتوهج
-        float pulseCore = 0.3f + 0.7f * (0.5f + 0.5f * sinf(time * 2.5f));
-        float coreAlpha = 180 + 60 * sinf(time * 2.0f);
-        float hueShift = fmod(time * 0.15f, 3.0f);
-        ImU32 coreColor;
-        if (hueShift < 1.0f) {
-            float t = hueShift;
-            coreColor = IM_COL32(255 - (int)(75 * t), (int)(150 * t), 150 + (int)(105 * t), (int)coreAlpha);
-        } else if (hueShift < 2.0f) {
-            float t = hueShift - 1.0f;
-            coreColor = IM_COL32(180 - (int)(80 * t), (int)(200 * t), 255, (int)coreAlpha);
-        } else {
-            float t = hueShift - 2.0f;
-            coreColor = IM_COL32((int)(100 * t), 255 - (int)(55 * t), 255, (int)coreAlpha);
-        }
-        float coreR = coreSize * (0.5f + 0.15f * pulseCore);
-        dl->AddCircleFilled(center, coreR, coreColor, 48);
-        dl->AddCircleFilled(center, coreR * 0.3f, IM_COL32(255, 255, 255, (int)(120 + 80 * pulseCore)), 32);
-        
-        // تأثير hover
-        if (hovered) {
-            float glowPulse = 0.5f + 0.5f * sinf(time * 4.0f);
-            dl->AddCircle(center, radius + 8.0f, IM_COL32(255, 0, 150, (int)(60 + 60 * glowPulse)), 48, 2.5f);
-            dl->AddCircle(center, radius + 16.0f, IM_COL32(180, 0, 255, (int)(40 + 40 * glowPulse)), 48, 1.8f);
-            dl->AddCircle(center, radius + 24.0f, IM_COL32(0, 200, 255, (int)(25 + 25 * glowPulse)), 48, 1.2f);
-            
-            for (int i = 0; i < 12; i++) {
-                float angle = time * 0.6f + i * IM_PI * 2.0f / 12.0f;
-                float dist = radius + 12.0f + 6.0f * sinf(time * 0.8f + i);
-                ImVec2 dotPos = ImVec2(center.x + cosf(angle) * dist, center.y + sinf(angle) * dist);
-                float dotAlpha = 0.5f + 0.5f * sinf(time * 2.0f + i * 1.2f);
-                ImU32 dotColor;
-                if (i % 3 == 0) dotColor = IM_COL32(255, 0, 150, (int)(dotAlpha * 200));
-                else if (i % 3 == 1) dotColor = IM_COL32(180, 0, 255, (int)(dotAlpha * 200));
-                else dotColor = IM_COL32(0, 200, 255, (int)(dotAlpha * 200));
-                dl->AddCircleFilled(dotPos, 3.0f + 2.0f * sinf(time * 1.5f + i), dotColor, 8);
-            }
-        }
-        
-        // السحب والضغط
+
         if (active && ImGui::IsMouseDragging(0)) {
             isDragging = true;
             buttonPos.x += io.MouseDelta.x;
@@ -2281,15 +1689,10 @@ static void DrawFloatingButton(ImGuiIO& io) {
             buttonPos.x = ImClamp(buttonPos.x, 0.0f, (float)Width - SIZE);
             buttonPos.y = ImClamp(buttonPos.y, 0.0f, (float)Height - SIZE);
         }
-        
-        if (hovered && ImGui::IsMouseReleased(0) && !isDragging) {
-            g_menu.isOpen = !g_menu.isOpen;
-        }
-        
+        if (hovered && ImGui::IsMouseReleased(0) && !isDragging) g_menu.isOpen = !g_menu.isOpen;
         if (!active) isDragging = false;
     }
     ImGui::End();
-    
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor();
 }
@@ -2392,9 +1795,9 @@ static void DrawAutoPlayToggleButton(ImGuiIO& io) {
     static ImVec2 pos = ImVec2(0, 0);
     static bool inited = false;
     static bool dragging = false;
-    static float pulse = 0.0f;
+    static float hoverAnim = 0.0f;
 
-    float R = 64.0f, S = R * 2.0f;
+    float R = 36.0f, S = R * 2.0f + 10.0f;
     if (!inited) {
         pos.x = (float)Width - S - 40.0f;
         pos.y = (float)Height - S - 90.0f;
@@ -2405,7 +1808,7 @@ static void DrawAutoPlayToggleButton(ImGuiIO& io) {
     pos.y = ImClamp(pos.y, 0.0f, (float)Height - S);
 
     SetNextWindowPos(pos, ImGuiCond_Always);
-    SetNextWindowSize(ImVec2(S + 10, S + 10), ImGuiCond_Always);
+    SetNextWindowSize(ImVec2(S, S), ImGuiCond_Always);
     PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0));
     PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -2414,55 +1817,30 @@ static void DrawAutoPlayToggleButton(ImGuiIO& io) {
               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
               ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
         ImDrawList* dl = GetWindowDrawList();
-        ImVec2 c = ImVec2(pos.x + R + 2, pos.y + R + 2);
+        ImVec2 c = ImVec2(pos.x + S * 0.5f, pos.y + S * 0.5f);
         SetCursorPos(ImVec2(0, 0));
         InvisibleButton(O("##ENOAutoHit"), ImVec2(S, S));
 
+        bool hovered = IsItemHovered();
         bool isOn = persistent_bool[O("bAutoPlay")];
-        pulse += io.DeltaTime * (isOn ? 4.5f : 2.0f);
+        hoverAnim += ((hovered ? 1.0f : 0.0f) - hoverAnim) * io.DeltaTime * 12.0f;
 
-        ImU32 ring = isOn ? NEON_GOLD : IM_COL32(255, 80, 80, 255);
-        ImU32 ringDim = isOn ? IM_COL32(255, 215, 0, 60) : IM_COL32(255, 80, 80, 60);
-        ImU32 inner1 = isOn ? IM_COL32(60, 45, 10, 240) : IM_COL32(45, 10, 10, 240);
-        ImU32 inner2 = isOn ? IM_COL32(30, 22, 5, 240) : IM_COL32(25, 5, 5, 240);
+        ImU32 border = isOn ? UI_ACCENT_RED : IM_COL32(90, 90, 90, 255);
+        ImU32 bg = hovered ? IM_COL32(30, 30, 30, 225) : IM_COL32(20, 20, 20, 215);
+        dl->AddCircleFilled(c, R, bg, 48);
+        dl->AddCircle(c, R, border, 48, 2.0f);
+        if (hovered) dl->AddCircle(c, R + 5.0f, isOn ? IM_COL32(200, 30, 30, 55) : IM_COL32(90, 90, 90, 55), 48, 1.2f);
 
-        dl->AddCircleFilled(ImVec2(c.x + 2, c.y + 4), R, IM_COL32(0, 0, 0, 140), 56);
-
-        float glowK = 0.55f + 0.45f * sinf(pulse);
-        for (int i = 5; i > 0; --i) {
-            float a = (6 - i) * 14.0f * glowK;
-            if (a > 255) a = 255;
-            ImU32 gcol = isOn ? IM_COL32(255, 215, 0, (int)a) : IM_COL32(255, 80, 80, (int)a);
-            dl->AddCircle(c, R + i * 2.0f, gcol, 56, 2.0f);
-        }
-
-        dl->AddCircleFilled(c, R, inner1, 56);
-        dl->AddCircleFilled(c, R - 4, inner2, 56);
-        dl->AddCircle(c, R, ring, 56, 2.6f);
-        dl->AddCircle(c, R - 8, ringDim, 56, 1.2f);
-
-        ImU32 icCol = IM_COL32(255, 255, 255, 255);
+        ImU32 icCol = UI_TEXT_PRIMARY;
         if (isOn) {
-            float bw = R * 0.14f, bh = R * 0.46f, gap = R * 0.14f;
-            dl->AddRectFilled(ImVec2(c.x - gap - bw, c.y - bh), ImVec2(c.x - gap, c.y + bh), icCol, 3.0f);
-            dl->AddRectFilled(ImVec2(c.x + gap, c.y - bh), ImVec2(c.x + gap + bw, c.y + bh), icCol, 3.0f);
-        } else {
-            ImVec2 p1(c.x - R * 0.22f, c.y - R * 0.36f);
-            ImVec2 p2(c.x - R * 0.22f, c.y + R * 0.36f);
-            ImVec2 p3(c.x + R * 0.36f, c.y);
+            ImVec2 p1(c.x - 8.0f, c.y - 12.0f);
+            ImVec2 p2(c.x - 8.0f, c.y + 12.0f);
+            ImVec2 p3(c.x + 14.0f, c.y);
             dl->AddTriangleFilled(p1, p2, p3, icCol);
+        } else {
+            dl->AddRectFilled(ImVec2(c.x - 12.0f, c.y - 12.0f), ImVec2(c.x - 4.0f, c.y + 12.0f), icCol, 2.0f);
+            dl->AddRectFilled(ImVec2(c.x + 4.0f, c.y - 12.0f), ImVec2(c.x + 12.0f, c.y + 12.0f), icCol, 2.0f);
         }
-
-        const char* label = isOn ? "AUTO ON" : "AUTO OFF";
-        ImU32 txtCol = isOn ? NEON_GOLD : IM_COL32(255, 120, 120, 255);
-        SetWindowFontScale(0.85f);
-        ImVec2 ts = CalcTextSize(label);
-
-        dl->AddRectFilled(ImVec2(c.x - ts.x * 0.5f - 6, c.y + R + 4),
-                          ImVec2(c.x + ts.x * 0.5f + 6, c.y + R + 6 + ts.y),
-                          IM_COL32(0, 0, 0, 160), 4.0f);
-        dl->AddText(ImVec2(c.x - ts.x * 0.5f, c.y + R + 5), txtCol, label);
-        SetWindowFontScale(1.0f);
 
         if (IsItemActive() && IsMouseDragging(0)) {
             dragging = true;
@@ -2500,7 +1878,7 @@ INLINE void DrawLogin(ImGuiIO& io) {
 
     SetNextWindowPos(ImVec2(0, 0));
     SetNextWindowSize(io.DisplaySize);
-    PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.03f, 0.92f));
+    PushStyleColor(ImGuiCol_WindowBg, ImVec4(10.0f / 255.0f, 10.0f / 255.0f, 10.0f / 255.0f, 0.94f));
     Begin(O("##Overlay"), nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBringToFrontOnFocus);
     PopStyleColor();
 
@@ -2511,10 +1889,11 @@ INLINE void DrawLogin(ImGuiIO& io) {
     SetNextWindowSize(ImVec2(cardW, cardH), ImGuiCond_Always);
     SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-    PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.08f, 0.10f, 1.0f));
-    PushStyleVar(ImGuiStyleVar_WindowRounding, 30.0f);
+    PushStyleColor(ImGuiCol_WindowBg, ImVec4(18.0f / 255.0f, 18.0f / 255.0f, 18.0f / 255.0f, 1.0f));
+    PushStyleColor(ImGuiCol_Border, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 180.0f / 255.0f));
+    PushStyleVar(ImGuiStyleVar_WindowRounding, 12.0f);
     PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
 
     Begin(O("##LoginCard"), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
 
@@ -2522,25 +1901,8 @@ INLINE void DrawLogin(ImGuiIO& io) {
     ImVec2 winPos = GetWindowPos();
     ImVec2 winSize = GetWindowSize();
     
-    dl->AddRectFilledMultiColor(winPos, winPos + winSize,
-        IM_COL32(15, 15, 25, 255),
-        IM_COL32(25, 25, 40, 255),
-        IM_COL32(30, 30, 45, 255),
-        IM_COL32(20, 20, 35, 255));
-    
-    dl->AddRect(winPos, winPos + winSize, IM_COL32(0, 127, 255, 200), 30.0f, 0, 2.0f);
-    dl->AddRect(winPos + ImVec2(4, 4), winPos + winSize - ImVec2(4, 4), IM_COL32(0, 127, 255, 30), 28.0f, 0, 1.0f);
-    
-    float cornerSize = 40.0f;
-    ImU32 cornerColor = IM_COL32(0, 127, 255, 150);
-    dl->AddLine(winPos + ImVec2(cornerSize, 0), winPos + ImVec2(cornerSize * 2, 0), cornerColor, 2.0f);
-    dl->AddLine(winPos + ImVec2(0, cornerSize), winPos + ImVec2(0, cornerSize * 2), cornerColor, 2.0f);
-    dl->AddLine(winPos + ImVec2(winSize.x - cornerSize, 0), winPos + ImVec2(winSize.x - cornerSize * 2, 0), cornerColor, 2.0f);
-    dl->AddLine(winPos + ImVec2(winSize.x, cornerSize), winPos + ImVec2(winSize.x, cornerSize * 2), cornerColor, 2.0f);
-    dl->AddLine(winPos + ImVec2(cornerSize, winSize.y), winPos + ImVec2(cornerSize * 2, winSize.y), cornerColor, 2.0f);
-    dl->AddLine(winPos + ImVec2(0, winSize.y - cornerSize), winPos + ImVec2(0, winSize.y - cornerSize * 2), cornerColor, 2.0f);
-    dl->AddLine(winPos + ImVec2(winSize.x - cornerSize, winSize.y), winPos + ImVec2(winSize.x - cornerSize * 2, winSize.y), cornerColor, 2.0f);
-    dl->AddLine(winPos + ImVec2(winSize.x, winSize.y - cornerSize), winPos + ImVec2(winSize.x, winSize.y - cornerSize * 2), cornerColor, 2.0f);
+    dl->AddRectFilled(winPos, winPos + winSize, UI_BG_CONTENT, 12.0f);
+    dl->AddRect(winPos, winPos + winSize, UI_ACCENT_RED_SOFT, 12.0f, 0, 1.0f);
 
     if (g_ArialBlackFont) PushFont(g_ArialBlackFont);
     SetCursorPosY(cardH * 0.08f);
@@ -2549,17 +1911,17 @@ INLINE void DrawLogin(ImGuiIO& io) {
     SetCursorPosX((cardW - titleSize.x) * 0.5f);
     
     ImVec2 titlePos = GetCursorScreenPos();
-    dl->AddText(NULL, 0.0f, titlePos + ImVec2(2, 2), IM_COL32(0, 127, 255, 40), O("WATAN - QP ENO"));
-    TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), O("WATAN - QP ENO"));
+    dl->AddText(NULL, 0.0f, titlePos + ImVec2(1, 1), IM_COL32(0, 0, 0, 120), O("WATAN - QP ENO"));
+    TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), O("WATAN - QP ENO"));
     
     ImVec2 titleEndPos = GetCursorScreenPos();
     float lineY = titleEndPos.y + 15.0f;
     float lineWidth = titleSize.x * 0.8f;
     float lineX = winPos.x + (winSize.x - lineWidth) * 0.5f;
     
-    dl->AddRectFilled(ImVec2(lineX, lineY), ImVec2(lineX + lineWidth, lineY + 2.0f), IM_COL32(0, 127, 255, 100));
+    dl->AddRectFilled(ImVec2(lineX, lineY), ImVec2(lineX + lineWidth, lineY + 2.0f), IM_COL32(200, 30, 30, 100));
     dl->AddRectFilled(ImVec2(lineX + lineWidth * 0.1f, lineY + 3.0f), 
-                      ImVec2(lineX + lineWidth * 0.9f, lineY + 4.0f), IM_COL32(0, 127, 255, 40));
+                      ImVec2(lineX + lineWidth * 0.9f, lineY + 4.0f), IM_COL32(200, 30, 30, 40));
     
     SetWindowFontScale(1.0f);
     if (g_ArialBlackFont) PopFont();
@@ -2571,8 +1933,8 @@ INLINE void DrawLogin(ImGuiIO& io) {
         spinnerAngle += io.DeltaTime * 6.0f;
         ImVec2 center = winPos + ImVec2(cardW * 0.5f, cardH * 0.45f);
         
-        dl->AddCircleFilled(center, 65.0f, IM_COL32(0, 127, 255, 20));
-        dl->AddCircle(center, 65.0f, IM_COL32(0, 127, 255, 60), 0, 3.0f);
+        dl->AddCircleFilled(center, 65.0f, IM_COL32(200, 30, 30, 20));
+        dl->AddCircle(center, 65.0f, IM_COL32(200, 30, 30, 60), 0, 3.0f);
         
         int dotCount = 12;
         float radius = 55.0f;
@@ -2628,11 +1990,11 @@ INLINE void DrawLogin(ImGuiIO& io) {
         ImVec2 inputPos = GetCursorScreenPos();
         
         dl->AddRectFilled(inputPos, inputPos + inputSize, IM_COL32(20, 20, 35, 230), 20.0f);
-        dl->AddRectFilled(inputPos, inputPos + inputSize, IM_COL32(0, 127, 255, 15), 20.0f);
-        dl->AddRect(inputPos, inputPos + inputSize, IM_COL32(0, 127, 255, 80), 20.0f, 0, 2.0f);
+        dl->AddRectFilled(inputPos, inputPos + inputSize, IM_COL32(200, 30, 30, 15), 20.0f);
+        dl->AddRect(inputPos, inputPos + inputSize, IM_COL32(200, 30, 30, 80), 20.0f, 0, 2.0f);
         dl->AddRectFilled(inputPos + ImVec2(5, 5), 
                          inputPos + inputSize - ImVec2(5, 5),
-                         IM_COL32(0, 127, 255, 5), 18.0f);
+                         IM_COL32(200, 30, 30, 5), 18.0f);
         
         SetCursorPosY(cardH * 0.24f + (inputHeight - 45) / 2.0f); 
         SetCursorPosX(110);
@@ -2652,9 +2014,9 @@ INLINE void DrawLogin(ImGuiIO& io) {
         ImVec2 iconPos = inputPos + ImVec2(inputSize.x - iconSize - 15, (inputSize.y - iconSize) / 2.0f);
         
         dl->AddRectFilled(iconPos, iconPos + ImVec2(iconSize, iconSize), 
-                         IM_COL32(0, 127, 255, 30), 12.0f);
+                         IM_COL32(200, 30, 30, 30), 12.0f);
         dl->AddRect(iconPos, iconPos + ImVec2(iconSize, iconSize), 
-                   IM_COL32(0, 127, 255, 60), 12.0f, 0, 1.0f);
+                   IM_COL32(200, 30, 30, 60), 12.0f, 0, 1.0f);
         
         if (g_IconFont) {
             PushFont(g_IconFont);
@@ -2664,7 +2026,7 @@ INLINE void DrawLogin(ImGuiIO& io) {
                 iconPos.x + (iconSize - faClipboardSize.x) * 0.5f,
                 iconPos.y + (iconSize - faClipboardSize.y) * 0.5f
             );
-            dl->AddText(iconDrawPos, IM_COL32(0, 127, 255, 220), "\uF46D");
+            dl->AddText(iconDrawPos, IM_COL32(200, 30, 30, 220), "\uF46D");
             SetWindowFontScale(1.0f);
             PopFont();
         }
@@ -2686,9 +2048,9 @@ INLINE void DrawLogin(ImGuiIO& io) {
 
         SetCursorPosY(cardH * 0.50f);
         SetCursorPosX(80);
-        PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.4f, 0.9f, 1.0f));
-        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.5f, 1.0f, 1.0f));
-        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.3f, 0.7f, 1.0f));
+        PushStyleColor(ImGuiCol_Button, ImVec4(200.0f / 255.0f, 30.0f / 255.0f, 30.0f / 255.0f, 1.0f));
+        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(215.0f / 255.0f, 45.0f / 255.0f, 45.0f / 255.0f, 1.0f));
+        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(160.0f / 255.0f, 24.0f / 255.0f, 24.0f / 255.0f, 1.0f));
         PushStyleVar(ImGuiStyleVar_FrameRounding, 20.0f);
         
         bool AutoLogin = first_time && !persistent_string["key"].empty();
@@ -2713,7 +2075,7 @@ INLINE void DrawLogin(ImGuiIO& io) {
         
         dl->AddRectFilled(btnPos - ImVec2(10, 10), 
                          btnPos + btnSize + ImVec2(10, 10),
-                         IM_COL32(0, 127, 255, 20), 25.0f);
+                         IM_COL32(200, 30, 30, 20), 25.0f);
         
         if (g_ArialBlackFont) PushFont(g_ArialBlackFont);
         SetWindowFontScale(1.5f);
@@ -2740,7 +2102,7 @@ INLINE void DrawLogin(ImGuiIO& io) {
         
         dl->AddLine(ImVec2(commPos.x - 20, commPos.y + commSize.y + 5),
                    ImVec2(commPos.x + commSize.x + 20, commPos.y + commSize.y + 5),
-                   IM_COL32(0, 127, 255, 40), 1.0f);
+                   IM_COL32(200, 30, 30, 40), 1.0f);
         
         SetWindowFontScale(1.0f);
         if (g_ArialBlackFont) PopFont();
@@ -2752,18 +2114,18 @@ INLINE void DrawLogin(ImGuiIO& io) {
             ImVec2 center = winPos + ImVec2(centerX, iconY);
             float radius = iconSide * 0.5f;
             
-            dl->AddCircleFilled(center, radius, IM_COL32(0, 127, 255, 25));
-            dl->AddCircle(center, radius, IM_COL32(0, 127, 255, 60), 0, 2.0f);
+            dl->AddCircleFilled(center, radius, IM_COL32(200, 30, 30, 25));
+            dl->AddCircle(center, radius, IM_COL32(200, 30, 30, 60), 0, 2.0f);
             
             ImVec2 p1 = center + ImVec2(-radius * 0.35f, radius * 0.15f);
             ImVec2 p2 = center + ImVec2(radius * 0.45f, -radius * 0.5f);
             ImVec2 p3 = center + ImVec2(radius * 0.3f, radius * 0.55f);
             
-            dl->AddTriangleFilled(p1, p2, p3, IM_COL32(0, 150, 255, 220));
-            dl->AddLine(p1, p2, IM_COL32(0, 100, 200, 150), 1.5f);
+            dl->AddTriangleFilled(p1, p2, p3, IM_COL32(200, 30, 30, 220));
+            dl->AddLine(p1, p2, IM_COL32(160, 24, 24, 150), 1.5f);
             ImVec2 wing1 = center + ImVec2(-radius * 0.2f, radius * 0.3f);
             ImVec2 wing2 = center + ImVec2(radius * 0.1f, radius * 0.5f);
-            dl->AddLine(wing1, wing2, IM_COL32(0, 100, 200, 120), 2.0f);
+            dl->AddLine(wing1, wing2, IM_COL32(160, 24, 24, 120), 2.0f);
             dl->AddCircleFilled(center + ImVec2(-radius * 0.1f, -radius * 0.1f), 
                                radius * 0.08f, IM_COL32(255, 255, 255, 80));
             
@@ -2788,7 +2150,7 @@ INLINE void DrawLogin(ImGuiIO& io) {
 
     End();
     PopStyleVar(3);
-    PopStyleColor();
+    PopStyleColor(2);
 
     End();
 }
