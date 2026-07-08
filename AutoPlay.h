@@ -211,6 +211,7 @@ ImVec2 GetPocketScreenPos(int pocketIdx) {
 static constexpr double POCKET_SAFETY_DISTANCE = 15.0;
 
 static bool IsCueBallSafe() {
+    if (!gPrediction) return false;
     auto allPockets = AutoPlay::getPockets();
     const Point2D& cuePos = gPrediction->guiData.balls[0].initialPosition;
     for (auto& p : allPockets) {
