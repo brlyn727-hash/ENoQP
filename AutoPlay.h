@@ -587,6 +587,19 @@ inline void AutoPlay::ScanSlow(double angleStep) {
                 continue;
             }
 
+            {
+                bool cueBallSafe = true;
+                auto allPockets = getPockets();
+                for (auto& p : allPockets) {
+                    double dSq = (gPrediction->guiData.balls[0].initialPosition - p).square();
+                    if (dSq < (15.0 * 15.0)) {
+                        cueBallSafe = false;
+                        break;
+                    }
+                }
+                if (!cueBallSafe) continue;
+            }
+
             int tot = 0, own = 0; bool hasLegal = false, p8 = false;
             for (int i = 1; i < gPrediction->guiData.ballsCount; i++) {
                 if (gPrediction->guiData.balls[i].originalOnTable && !gPrediction->guiData.balls[i].onTable) {
@@ -1123,6 +1136,19 @@ inline void AutoPlay::ScanFast(double angleStep) {
             int effectiveTargetIdx = bestPottedIdx;
             if (nominatedPocket < 6 && gPrediction->guiData.balls[effectiveTargetIdx].pocketIndex != nominatedPocket) continue;
 
+            {
+                bool cueBallSafe = true;
+                auto allPockets = getPockets();
+                for (auto& p : allPockets) {
+                    double dSq = (gPrediction->guiData.balls[0].initialPosition - p).square();
+                    if (dSq < (15.0 * 15.0)) {
+                        cueBallSafe = false;
+                        break;
+                    }
+                }
+                if (!cueBallSafe) continue;
+            }
+
             int potCount = 0;
             bool pots9 = false;
             for (int i = 1; i < gPrediction->guiData.ballsCount; i++) {
@@ -1235,42 +1261,9 @@ inline void AutoPlay::ScanFast(double angleStep) {
                 double distCueToTarget = sqrt(cueToTarget.square());
                 double totalDist = distCueToTarget + distToPocket;
                 
-                double finalPower;
-                if (distToPocket < 2.0) {
-                    finalPower = 80.0;
-                } else if (distToPocket < 5.0) {
-                    finalPower = 120.0;
-                } else if (distToPocket < 10.0) {
-                    finalPower = 150.0;
-                } else if (distToPocket < 20.0) {
-                    finalPower = 180.0;
-                } else if (totalDist < 50.0) {
-                    finalPower = 200.0;
-                } else if (totalDist < 100.0) {
-                    finalPower = 250.0;
-                } else if (totalDist < 200.0) {
-                    finalPower = 300.0;
-                } else if (totalDist < 300.0) {
-                    finalPower = 340.0;
-                } else if (totalDist < 400.0) {
-                    finalPower = 380.0;
-                } else if (totalDist < 500.0) {
-                    finalPower = 420.0;
-                } else if (totalDist < 600.0) {
-                    finalPower = 450.0;
-                } else if (totalDist < 700.0) {
-                    finalPower = 480.0;
-                } else if (totalDist < 800.0) {
-                    finalPower = 510.0;
-                } else if (totalDist < 900.0) {
-                    finalPower = 540.0;
-                } else if (totalDist < 1000.0) {
-                    finalPower = 570.0;
-                } else if (totalDist < 1200.0) {
-                    finalPower = 600.0;
-                } else {
-                    finalPower = 666.0;
-                }
+                double finalPower = CalculateRequiredPower(totalDist);
+                if (finalPower < (double)powerMin) finalPower = (double)powerMin;
+                if (finalPower > (double)powerMax) finalPower = (double)powerMax;
                 
                 cf.power = finalPower;
                 setAimAngle(cf.angle);
@@ -1324,42 +1317,9 @@ inline void AutoPlay::ScanFast(double angleStep) {
                 double distCueToTarget = sqrt(cueToTarget.square());
                 double totalDist = distCueToTarget + distToPocket;
                 
-                double finalPower;
-                if (distToPocket < 2.0) {
-                    finalPower = 80.0;
-                } else if (distToPocket < 5.0) {
-                    finalPower = 120.0;
-                } else if (distToPocket < 10.0) {
-                    finalPower = 150.0;
-                } else if (distToPocket < 20.0) {
-                    finalPower = 180.0;
-                } else if (totalDist < 50.0) {
-                    finalPower = 200.0;
-                } else if (totalDist < 100.0) {
-                    finalPower = 250.0;
-                } else if (totalDist < 200.0) {
-                    finalPower = 300.0;
-                } else if (totalDist < 300.0) {
-                    finalPower = 340.0;
-                } else if (totalDist < 400.0) {
-                    finalPower = 380.0;
-                } else if (totalDist < 500.0) {
-                    finalPower = 420.0;
-                } else if (totalDist < 600.0) {
-                    finalPower = 450.0;
-                } else if (totalDist < 700.0) {
-                    finalPower = 480.0;
-                } else if (totalDist < 800.0) {
-                    finalPower = 510.0;
-                } else if (totalDist < 900.0) {
-                    finalPower = 540.0;
-                } else if (totalDist < 1000.0) {
-                    finalPower = 570.0;
-                } else if (totalDist < 1200.0) {
-                    finalPower = 600.0;
-                } else {
-                    finalPower = 666.0;
-                }
+                double finalPower = CalculateRequiredPower(totalDist);
+                if (finalPower < (double)powerMin) finalPower = (double)powerMin;
+                if (finalPower > (double)powerMax) finalPower = (double)powerMax;
                 
                 cf.power = finalPower;
                 fs.isInitiated = false;
