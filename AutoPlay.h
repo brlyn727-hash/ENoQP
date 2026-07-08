@@ -207,6 +207,19 @@ ImVec2 GetPocketScreenPos(int pocketIdx) {
 }
 
 // ===== STATIC METHOD DEFINITIONS =====
+
+static constexpr double POCKET_SAFETY_DISTANCE = 15.0;
+
+static bool IsCueBallSafe() {
+    auto allPockets = AutoPlay::getPockets();
+    const Point2D& cuePos = gPrediction->guiData.balls[0].initialPosition;
+    for (auto& p : allPockets) {
+        if ((cuePos - p).square() < (POCKET_SAFETY_DISTANCE * POCKET_SAFETY_DISTANCE))
+            return false;
+    }
+    return true;
+}
+
 inline void AutoPlay::applyAutoSpin() {
     if (!bAutoSpin) return;
     Vec2d spin = {0.0, 0.0};
@@ -587,18 +600,7 @@ inline void AutoPlay::ScanSlow(double angleStep) {
                 continue;
             }
 
-            {
-                bool cueBallSafe = true;
-                auto allPockets = getPockets();
-                for (auto& p : allPockets) {
-                    double dSq = (gPrediction->guiData.balls[0].initialPosition - p).square();
-                    if (dSq < (15.0 * 15.0)) {
-                        cueBallSafe = false;
-                        break;
-                    }
-                }
-                if (!cueBallSafe) continue;
-            }
+            if (!IsCueBallSafe()) continue;
 
             int tot = 0, own = 0; bool hasLegal = false, p8 = false;
             for (int i = 1; i < gPrediction->guiData.ballsCount; i++) {
@@ -1136,18 +1138,7 @@ inline void AutoPlay::ScanFast(double angleStep) {
             int effectiveTargetIdx = bestPottedIdx;
             if (nominatedPocket < 6 && gPrediction->guiData.balls[effectiveTargetIdx].pocketIndex != nominatedPocket) continue;
 
-            {
-                bool cueBallSafe = true;
-                auto allPockets = getPockets();
-                for (auto& p : allPockets) {
-                    double dSq = (gPrediction->guiData.balls[0].initialPosition - p).square();
-                    if (dSq < (15.0 * 15.0)) {
-                        cueBallSafe = false;
-                        break;
-                    }
-                }
-                if (!cueBallSafe) continue;
-            }
+            if (!IsCueBallSafe()) continue;
 
             int potCount = 0;
             bool pots9 = false;
@@ -1236,16 +1227,7 @@ inline void AutoPlay::ScanFast(double angleStep) {
         }
         if (!gPrediction->guiData.balls[0].onTable) continue;
         
-        bool cueBallSafe = true;
-        auto allPockets = getPockets();
-        for (auto& p : allPockets) {
-            double dSq = (gPrediction->guiData.balls[0].initialPosition - p).square();
-            if (dSq < (15.0 * 15.0)) {
-                cueBallSafe = false;
-                break;
-            }
-        }
-        if (!cueBallSafe) continue;
+        if (!IsCueBallSafe()) continue;
         if (eightBallPotted && !onlyEightBallLeft) continue;
 
         Candidate cf = raw;
